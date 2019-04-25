@@ -10,6 +10,9 @@ const initializeSchema = async(db) => {
 
     await db.run('CREATE TABLE IF NOT EXISTS Withdrawals (UtcTimestamp, Asset, Amount, Address, Status)');
     await db.run('CREATE UNIQUE INDEX IF NOT EXISTS UniqueWithdrawal ON Withdrawals (UtcTimestamp, Asset, Amount, Address)');
+
+    await db.run('CREATE TABLE IF NOT EXISTS Balances (RecordTimestamp, CollectionTime, Asset, Free, Locked)');
+    await db.run('CREATE UNIQUE INDEX IF NOT EXISTS UniqueRecordTime ON Balances (RecordTimestamp, Asset)');
 };
 
 const normalizeAssetCase = asset => asset.toUpperCase();
@@ -66,7 +69,7 @@ class Database {
             $utcTimestamp: utcTimestamp,
             $isBuyer: isBuyer,
             $isMaker: isMaker,
-            $isBestMatch: isBestMatch
+            $isBestMatch: isBestMatch,
         });
     }
 
@@ -77,7 +80,7 @@ class Database {
             $utcTimestamp: utcTimestamp,
             $asset: asset,
             $amount: amount,
-            $status: status
+            $status: status,
         });
     }
 
@@ -89,8 +92,25 @@ class Database {
             $asset: asset,
             $amount: amount,
             $address: address,
-            $status: status
+            $status: status,
         });
+    }
+
+    async logBalanceSnapshot(asOf, recordTimestamp, balanceRecords) {
+        for (let i = 0; i < balanceRecords.length; i++) {
+            const balanceRecord = balanceRecords[i];
+            const asset = normalizeAssetCase(balanceRecord.asset);
+            const free = balanceRecord.free;
+            const locked = balanceRecord.locked;
+            const query = 'INSERT OR REPLACE INTO Balances VALUES ( $recordTimestamp, $collectionTime, $asset, $free, $locked )';
+            await this.db.run(query, {
+                $recordTimestamp: recordTimestamp,
+                $collectionTime: asOf,
+                $asset: asset,
+                $free: free,
+                $locked: locked,
+            });
+        }
     }
 };
 

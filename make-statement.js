@@ -68,11 +68,21 @@ const synchronizeWithdrawals = async(binance, db) => {
     } while (newRecords);
 };
 
+const takeBalanceSnapshot = async(binance, db) => {
+    const asOf = Math.round((new Date).getTime() / 1000);
+    const recodingInterval = 60 * 60 * 24; // one row per day, max (assuming the program runs at least once per day)
+    const recordTimestamp = Math.round(asOf / recodingInterval) * recodingInterval;
+    console.debug('Taking balance snapshot; record timestamp: %d; actual time: %d', recordTimestamp, asOf);
+    const accountInfo = await binance.accountInfo();
+    await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
+};
+
 const main = async(apiKey, apiSecret, outputFile, dataFile) => {
     try {
         console.log("Making statement...", apiKey, apiSecret, outputFile, dataFile);
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
+        await takeBalanceSnapshot(binance, db);
         await synchronizeDeposits(binance, db);
         await synchronizeWithdrawals(binance, db);
         await synchronizeFills(binance, db);

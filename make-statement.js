@@ -5,7 +5,7 @@ const Database = require('./database');
 
 const sleepForBinance = async(speed) => {
     if (speed < 10) {
-        return new Promise(resolve => setTimeout(resolve, (10 - speed) * 500));
+        return new Promise(resolve => setTimeout(resolve, (10 - speed) * 250));
     } else {
         return Promise.resolve();
     }

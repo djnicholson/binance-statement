@@ -1,0 +1,19 @@
+{
+  "name": "binance-statement",
+  "version": "1.0.0",
+  "description": "Generates a financial statement for a Binance account",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/djnicholson/binance-statement.git"
+  },
+  "author": "David Nicholson",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/djnicholson/binance-statement/issues"
+  },
+  "homepage": "https://github.com/djnicholson/binance-statement#readme"
+}

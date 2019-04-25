@@ -12,7 +12,7 @@ program
     .option('-s, --api-secret <secret>', 'Binance API secret')
     .option('-o, --output-file <file>', 'Output HTML file')
     .option('-d, --data-file [file]', 'Data file')
-    .action(function(options) {
+    .action(async(options) => {
         if (!options.apiKey) {
             program.outputHelp();
             console.error(colors.red('\nThe --api-key option is required\n'));
@@ -23,7 +23,7 @@ program
             program.outputHelp();
             console.error(colors.red('\nThe --output-file option is required\n'));
         } else {
-            makeStatement(
+            await makeStatement(
                 options.apiKey,
                 options.apiSecret,
                 options.outputFile,

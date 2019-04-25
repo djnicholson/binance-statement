@@ -12,6 +12,7 @@ program
     .option('-s, --api-secret <secret>', 'Binance API secret')
     .option('-o, --output-file <file>', 'Output HTML file')
     .option('-d, --data-file [file]', 'Data file')
+    .option('-n, --no-fills-sync', 'Skip syncing fill data from Binance (takes a long time)')
     .action(async(options) => {
         if (!options.apiKey) {
             program.outputHelp();
@@ -23,11 +24,16 @@ program
             program.outputHelp();
             console.error(colors.red('\nThe --output-file option is required\n'));
         } else {
+            if (!options.fillsSync) {
+                console.warn(colors.yellow('\nNot retriving fills from Binance; statement may be out of date.\n'));
+            }
+
             await makeStatement(
                 options.apiKey,
                 options.apiSecret,
                 options.outputFile,
-                options.dataFile || (options.apiKey + ".db"));
+                options.dataFile || (options.apiKey + ".db"),
+                options.fillsSync);
         }
     });
 

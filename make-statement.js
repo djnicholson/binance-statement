@@ -1,4 +1,6 @@
 const Binance = require('binance-api-node').default;
+
+const Aggregator = require('./aggregator');
 const Database = require('./database');
 
 const synchronizeFills = async(binance, db) => {
@@ -77,15 +79,16 @@ const takeBalanceSnapshot = async(binance, db) => {
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
-const main = async(apiKey, apiSecret, outputFile, dataFile) => {
+const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance) => {
     try {
-        console.log("Making statement...", apiKey, apiSecret, outputFile, dataFile);
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
+        const aggregator = new Aggregator();
+
         await takeBalanceSnapshot(binance, db);
         await synchronizeDeposits(binance, db);
         await synchronizeWithdrawals(binance, db);
-        await synchronizeFills(binance, db);
+        syncFillsFromBinance && await synchronizeFills(binance, db);
     } catch (e) {
         console.error(e);
     }

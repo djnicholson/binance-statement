@@ -35,8 +35,8 @@ const synchronizeDeposits = async(binance, db) => {
     do {
         newRecords = false;
         const records = await binance.depositHistory({ startTime: mostRecentTimestamp });
-        for (let i = 0; i < records.length; i++) {
-            const record = records[i];
+        for (let i = 0; i < records.depositList.length; i++) {
+            const record = records.depositList[i];
             if (record.insertTime > mostRecentTimestamp) {
                 mostRecentTimestamp = record.insertTime;
                 newRecords = true;
@@ -55,8 +55,8 @@ const synchronizeWithdrawals = async(binance, db) => {
     do {
         newRecords = false;
         const records = await binance.withdrawHistory({ startTime: mostRecentTimestamp });
-        for (let i = 0; i < records.length; i++) {
-            const record = records[i];
+        for (let i = 0; i < records.withdrawList.length; i++) {
+            const record = records.withdrawList[i];
             if (record.applyTime > mostRecentTimestamp) {
                 mostRecentTimestamp = record.applyTime;
                 newRecords = true;

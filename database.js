@@ -35,14 +35,12 @@ class Database {
     }
 
     async getMostRecentDepositTime() {
-        asset = normalizeAssetCase(asset);
         const query = 'SELECT UtcTimestamp FROM Deposits ORDER BY UtcTimestamp DESC LIMIT 1';
         const row = await this.db.get(query);
         return row ? row.UtcTimestamp : 0;
     }
 
     async getMostRecentWithdrawalTime() {
-        asset = normalizeAssetCase(asset);
         const query = 'SELECT UtcTimestamp FROM Withdrawals ORDER BY UtcTimestamp DESC LIMIT 1';
         const row = await this.db.get(query);
         return row ? row.UtcTimestamp : 0;

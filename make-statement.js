@@ -3,7 +3,15 @@ const Binance = require('binance-api-node').default;
 const Aggregator = require('./aggregator');
 const Database = require('./database');
 
-const synchronizeFills = async(binance, db) => {
+const sleepForBinance = async(speed) => {
+    if (speed < 10) {
+        return new Promise(resolve => setTimeout(resolve, (10 - speed) * 500));
+    } else {
+        return Promise.resolve();
+    }
+}
+
+const synchronizeFills = async(binance, db, speed) => {
     const exchangeInfo = await binance.exchangeInfo();
     for (let i = 0; i < exchangeInfo.symbols.length; i++) {
         const baseAsset = exchangeInfo.symbols[i].baseAsset;
@@ -14,6 +22,7 @@ const synchronizeFills = async(binance, db) => {
         let newRecords;
         do {
             newRecords = false;
+            await sleepForBinance(speed);
             const trades = await binance.myTrades({ symbol: symbol, fromId: mostRecentFill });
             for (let j = 0; j < trades.length; j++) {
                 const trade = trades[j];
@@ -30,12 +39,13 @@ const synchronizeFills = async(binance, db) => {
     }
 };
 
-const synchronizeDeposits = async(binance, db) => {
+const synchronizeDeposits = async(binance, db, speed) => {
     console.debug('Synchronizing deposits');
     let mostRecentTimestamp = await db.getMostRecentDepositTime();
     let newRecords;
     do {
         newRecords = false;
+        await sleepForBinance(speed);
         const records = await binance.depositHistory({ startTime: mostRecentTimestamp });
         for (let i = 0; i < records.depositList.length; i++) {
             const record = records.depositList[i];
@@ -50,12 +60,13 @@ const synchronizeDeposits = async(binance, db) => {
     } while (newRecords);
 };
 
-const synchronizeWithdrawals = async(binance, db) => {
+const synchronizeWithdrawals = async(binance, db, speed) => {
     console.debug('Synchronizing withdrawals');
     let mostRecentTimestamp = await db.getMostRecentWithdrawalTime();
     let newRecords;
     do {
         newRecords = false;
+        await sleepForBinance(speed);
         const records = await binance.withdrawHistory({ startTime: mostRecentTimestamp });
         for (let i = 0; i < records.withdrawList.length; i++) {
             const record = records.withdrawList[i];
@@ -70,25 +81,26 @@ const synchronizeWithdrawals = async(binance, db) => {
     } while (newRecords);
 };
 
-const takeBalanceSnapshot = async(binance, db) => {
+const takeBalanceSnapshot = async(binance, db, speed) => {
     const asOf = Math.round((new Date).getTime() / 1000);
     const recodingInterval = 60 * 60 * 24; // one row per day, max (assuming the program runs at least once per day)
     const recordTimestamp = Math.round(asOf / recodingInterval) * recodingInterval;
     console.debug('Taking balance snapshot; record timestamp: %d; actual time: %d', recordTimestamp, asOf);
+    await sleepForBinance(speed);
     const accountInfo = await binance.accountInfo();
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
-const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance) => {
+const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance, speed) => {
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
         const aggregator = new Aggregator();
 
-        await takeBalanceSnapshot(binance, db);
-        await synchronizeDeposits(binance, db);
-        await synchronizeWithdrawals(binance, db);
-        syncFillsFromBinance && await synchronizeFills(binance, db);
+        await takeBalanceSnapshot(binance, db, speed);
+        await synchronizeDeposits(binance, db, speed);
+        await synchronizeWithdrawals(binance, db, speed);
+        syncFillsFromBinance && await synchronizeFills(binance, db, speed);
     } catch (e) {
         console.error(e);
     }

@@ -13,6 +13,7 @@ program
     .option('-o, --output-file <file>', 'Output HTML file')
     .option('-d, --data-file [file]', 'Data file')
     .option('-n, --no-fills-sync', 'Skip syncing fill data from Binance (takes a long time)')
+    .option('-S --speed <n>', 'A number between 1 and 10 (10 is fastest). Too fast may cause Binance throttling.', parseInt, 9)
     .action(async(options) => {
         if (!options.apiKey) {
             program.outputHelp();
@@ -33,7 +34,8 @@ program
                 options.apiSecret,
                 options.outputFile,
                 options.dataFile || (options.apiKey + ".db"),
-                options.fillsSync);
+                options.fillsSync,
+                Math.max(1, Math.min(10, options.speed)));
         }
     });
 

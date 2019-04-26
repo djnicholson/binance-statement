@@ -127,7 +127,7 @@ const logEvent = event => {
             console.log('%s: Withdrawal:     %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);
             break;
         case Aggregator.EVENT_TYPE_SNAPSHOT:
-            console.log('%s: Portfolio value: %f', new Date(event.utcTimestamp), event.totalPortfolioValue);
+            console.log('%s:                              portfolio value: %f', new Date(event.utcTimestamp), event.totalPortfolioValue);
             break;
     }
 };
@@ -137,7 +137,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
         const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
-        const aggregator = new Aggregator(db, priceCache, 'USDT', /*valuationIntervalInMinutes*/ 60);
+        const aggregator = new Aggregator(db, priceCache, 'USDT', /*valuationIntervalInMinutes*/ 60 * 3);
         const fillCombiner = new FillCombiner(aggregator);
 
         await takeBalanceSnapshot(binance, db, speed);

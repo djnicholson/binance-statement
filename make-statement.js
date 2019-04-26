@@ -12,30 +12,42 @@ const sleepForBinance = async(speed) => {
 }
 
 const synchronizeFills = async(binance, db, speed) => {
+    console.debug('Synchronizing fills');
+    process.stdout.write("[0%] Preparing...");
     const exchangeInfo = await binance.exchangeInfo();
-    for (let i = 0; i < exchangeInfo.symbols.length; i++) {
-        const baseAsset = exchangeInfo.symbols[i].baseAsset;
-        const quoteAsset = exchangeInfo.symbols[i].quoteAsset;
-        const symbol = exchangeInfo.symbols[i].symbol;
-        console.debug('Synchronizing fills in %s', symbol);
-        let mostRecentFill = await db.getMostRecentFillId(symbol);
-        let newRecords;
-        do {
-            newRecords = false;
-            await sleepForBinance(speed);
-            const trades = await binance.myTrades({ symbol: symbol, fromId: mostRecentFill });
-            for (let j = 0; j < trades.length; j++) {
-                const trade = trades[j];
-                if (trade.id > mostRecentFill) {
-                    mostRecentFill = trade.id;
-                    newRecords = true;
-                }
+    try {
+        for (let i = 0; i < exchangeInfo.symbols.length; i++) {
+            const progressString = Math.round((i / exchangeInfo.symbols.length) * 100) + '%';
+            const baseAsset = exchangeInfo.symbols[i].baseAsset;
+            const quoteAsset = exchangeInfo.symbols[i].quoteAsset;
+            const symbol = exchangeInfo.symbols[i].symbol;
+            process.stdout.clearLine();
+            process.stdout.cursorTo(0);
+            process.stdout.write('[' + progressString + '] Synchronizing fills in ' + symbol);
+            let mostRecentFill = await db.getMostRecentFillId(symbol);
+            let newRecords;
+            do {
+                newRecords = false;
+                await sleepForBinance(speed);
+                const trades = await binance.myTrades({ symbol: symbol, fromId: mostRecentFill });
+                for (let j = 0; j < trades.length; j++) {
+                    const trade = trades[j];
+                    if (trade.id > mostRecentFill) {
+                        mostRecentFill = trade.id;
+                        newRecords = true;
+                    }
 
-                console.debug('Logging fill in %s (%f @ %f on %d)', symbol, trade.qty, trade.price, trade.time);
-                await db.logFill(trade.id, baseAsset, quoteAsset, symbol, trade.orderId, trade.price, trade.qty,
-                    trade.commission, trade.commissionAsset, trade.time, trade.isBuyer, trade.isMaker, trade.isBestMatch);
-            }
-        } while (newRecords);
+                    process.stdout.clearLine();
+                    process.stdout.cursorTo(0);
+                    process.stdout.write('[' + progressString + '] Logging fill in ' + symbol + ' (' + trade.qty + ' @ ' + trade.price + ' on ' + trade.time + ')');
+                    await db.logFill(trade.id, baseAsset, quoteAsset, symbol, trade.orderId, trade.price, trade.qty,
+                        trade.commission, trade.commissionAsset, trade.time, trade.isBuyer, trade.isMaker, trade.isBestMatch);
+                }
+            } while (newRecords);
+        }
+    } finally {
+        process.stdout.clearLine();
+        process.stdout.cursorTo(0);
     }
 };
 

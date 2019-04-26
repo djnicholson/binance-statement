@@ -22,7 +22,7 @@ const lowerTimestamp = (thisRecord, otherRecords) => {
         return false;
     }
 
-    for (let i = 0; i < otherRecords; i++) {
+    for (let i = 0; i < otherRecords.length; i++) {
         if (otherRecords[i] && (otherRecords[i].UtcTimestamp < thisRecord.UtcTimestamp)) {
             return false;
         }
@@ -53,7 +53,7 @@ class Database {
         const fillsReader = await this.db.prepare('SELECT * FROM Fills ORDER BY UtcTimestamp ASC');
         const depositReader = await this.db.prepare('SELECT * FROM Deposits ORDER BY UtcTimestamp ASC');
         const withdrawalReader = await this.db.prepare('SELECT * FROM Withdrawals ORDER BY UtcTimestamp ASC');
-        const balanceReader = await this.db.prepare('SELECT *, RecordTimestamp AS UtcTimestamp FROM Balances ORDER BY RecordTimestamp ASC');
+        const balanceReader = await this.db.prepare('SELECT *, CollectionTime * 1000 AS UtcTimestamp FROM Balances ORDER BY RecordTimestamp ASC');
         try {
             let nextFill = await fillsReader.get();
             let nextDeposit = await depositReader.get();

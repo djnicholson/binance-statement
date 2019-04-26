@@ -17,6 +17,20 @@ const initializeSchema = async(db) => {
 
 const normalizeAssetCase = asset => asset.toUpperCase();
 
+const lowerTimestamp = (thisRecord, otherRecords) => {
+    if (!thisRecord) {
+        return false;
+    }
+
+    for (let i = 0; i < otherRecords; i++) {
+        if (otherRecords[i] && (otherRecords[i].UtcTimestamp < thisRecord.UtcTimestamp)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 class Database {
 
     static async open(dataFile) {
@@ -28,6 +42,50 @@ class Database {
 
     constructor(db) {
         this.db = db;
+    }
+
+    static get RECORD_TYPE_FILL() { return 'RECORD_TYPE_FILL'; }
+    static get RECORD_TYPE_DEPOSIT() { return 'RECORD_TYPE_DEPOSIT'; }
+    static get RECORD_TYPE_WITHDRAWAL() { return 'RECORD_TYPE_WITHDRAWAL'; }
+    static get RECORD_TYPE_BALANCE() { return 'RECORD_TYPE_BALANCE'; }
+
+    async forEachRecord(callback) {
+        const fillsReader = await this.db.prepare('SELECT * FROM Fills ORDER BY UtcTimestamp ASC');
+        const depositReader = await this.db.prepare('SELECT * FROM Deposits ORDER BY UtcTimestamp ASC');
+        const withdrawalReader = await this.db.prepare('SELECT * FROM Withdrawals ORDER BY UtcTimestamp ASC');
+        const balanceReader = await this.db.prepare('SELECT *, RecordTimestamp AS UtcTimestamp FROM Balances ORDER BY RecordTimestamp ASC');
+        try {
+            let nextFill = await fillsReader.get();
+            let nextDeposit = await depositReader.get();
+            let nextWithdrawal = await withdrawalReader.get();
+            let nextBalance = await balanceReader.get();
+            while (nextFill || nextDeposit || nextWithdrawal || nextBalance) {
+                if (lowerTimestamp(nextFill, [nextDeposit, nextWithdrawal, nextBalance])) {
+                    nextFill.RecordType = Database.RECORD_TYPE_FILL;
+                    callback(nextFill);
+                    nextFill = await fillsReader.get();
+                } else if (lowerTimestamp(nextDeposit, [nextFill, nextWithdrawal, nextBalance])) {
+                    nextDeposit.RecordType = Database.RECORD_TYPE_DEPOSIT;
+                    callback(nextDeposit);
+                    nextDeposit = await depositReader.get();
+                } else if (lowerTimestamp(nextWithdrawal, [nextFill, nextDeposit, nextBalance])) {
+                    nextWithdrawal.RecordType = Database.RECORD_TYPE_WITHDRAWAL;
+                    callback(nextWithdrawal);
+                    nextWithdrawal = await withdrawalReader.get();
+                } else {
+                    nextBalance.RecordType = Database.RECORD_TYPE_BALANCE;
+                    callback(nextBalance);
+                    nextBalance = await balanceReader.get();
+                }
+            }
+        } finally {
+            await fillsReader.finalize();
+            await depositReader.finalize();
+            await withdrawalReader.finalize();
+            await balanceReader.finalize();
+        }
+
+        return Promise.resolve();
     }
 
     async getMostRecentFillId(symbol) {

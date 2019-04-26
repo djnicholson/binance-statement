@@ -108,12 +108,14 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
-        const aggregator = new Aggregator();
+        const aggregator = new Aggregator(db);
 
         await takeBalanceSnapshot(binance, db, speed);
         await synchronizeDeposits(binance, db, speed);
         await synchronizeWithdrawals(binance, db, speed);
         syncFillsFromBinance && await synchronizeFills(binance, db, speed);
+
+        await aggregator.go();
     } catch (e) {
         console.error(e);
     }

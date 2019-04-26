@@ -106,6 +106,32 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
+const logEvent = event => {
+    switch (event.eventType) {
+        case Aggregator.EVENT_TYPE_BUY_AGGREGATION:
+            console.log('%d: Bought %f %s @ %f %s; value: %f; portfolio value: %f', event.utcTimestamp, event.quantity, event.baseAsset, event.price, event.baseAsset, event.value, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_SELL_AGGREGATION:
+            console.log('%d: Sold   %f %s @ %f %s; value: %f; portfolio value: %f', event.utcTimestamp, event.quantity, event.baseAsset, event.price, event.baseAsset, event.value, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_BINANCE_CREDIT:
+            console.log('%d: Binance credit: %f %s; portfolio value: %f', event.utcTimestamp, event.amount, event.asset, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_BINANCE_DEBIT:
+            console.log('%d: Binance debit:  %f %s; portfolio value: %f', event.utcTimestamp, event.amount, event.asset, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_DEPOSIT:
+            console.log('%d: Deposit:        %f %s; portfolio value: %f', event.utcTimestamp, event.amount, event.asset, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_WITHDRAWAL:
+            console.log('%d: Withdrawal:     %f %s; portfolio value: %f', event.utcTimestamp, event.amount, event.asset, event.totalPortfolioValue);
+            break;
+        case Aggregator.EVENT_TYPE_SNAPSHOT:
+            console.log('%d: Portfolio value: %f', event.utcTimestamp, event.totalPortfolioValue);
+            break;
+    }
+};
+
 const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed) => {
     try {
         const db = await Database.open(dataFile);
@@ -119,7 +145,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
         await synchronizeWithdrawals(binance, db, speed);
         syncFillsFromBinance && await synchronizeFills(binance, db, speed);
 
-        await fillCombiner.enumerateEvents(console.log);
+        await fillCombiner.enumerateEvents(logEvent);
     } catch (e) {
         console.error(e);
     }

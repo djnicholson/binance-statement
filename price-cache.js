@@ -112,7 +112,7 @@ class PriceCache {
             await this.preBinanceCallback();
             const candles = await this.binance.candles({ symbol: symbol, interval: interval, endTime: utcTimestamp, limit: 1 });
             candles[0] && (candles[0].closeTime < (new Date).getTime()) && (candle = candles[0]);
-            statusCallback('Retrieved ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + '...');
+            statusCallback && statusCallback('Retrieved ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + '...');
         } catch (e) {
             candle = undefined; // an undefined result implies that the candle will never exist
             if ((e + '').toLowerCase().indexOf('invalid symbol') == -1) {

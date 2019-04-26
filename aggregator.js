@@ -10,8 +10,9 @@ const adjustBalance = (balances, symbol, amount, isDebit) => {
 
 class Aggregator {
 
-    constructor(db) {
+    constructor(db, unitOfAccount) {
         this.db = db;
+        this.unitOfAccount = unitOfAccount;
     }
 
     async go() {

@@ -108,7 +108,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
-        const aggregator = new Aggregator(db);
+        const aggregator = new Aggregator(db, 'USDT');
 
         await takeBalanceSnapshot(binance, db, speed);
         await synchronizeDeposits(binance, db, speed);

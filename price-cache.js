@@ -44,6 +44,9 @@ class PriceCache {
         baseAsset = normalizeAssetCase(baseAsset);
         quoteAsset = normalizeAssetCase(quoteAsset);
 
+        // use the midpoint of the containing minute for result caching purposes:
+        utcTimestamp = (Math.round(utcTimestamp / (1000 * 60)) * (1000 * 60) + (30 * 1000));
+
         if (baseAsset === quoteAsset) {
             return 1.0;
         }

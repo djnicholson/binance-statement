@@ -14,7 +14,7 @@ program
     .option('-d, --data-file [file]', 'Data file')
     .option('-c, --cache-file [file]', 'Price cache file (one cache can be shared between multiple Binance accounts)')
     .option('-n, --no-fills-sync', 'Skip syncing fill data from Binance (takes a long time)')
-    .option('-S --speed <n>', 'A number between 1 and 10 (10 is fastest). Too fast may cause Binance throttling.', parseInt, 9)
+    .option('-S --speed <n>', 'A number between 1 and 10 (10 is fastest). Too fast may cause Binance throttling.', parseInt)
     .action(async(options) => {
         if (!options.apiKey) {
             program.outputHelp();
@@ -37,7 +37,7 @@ program
                 options.dataFile || (options.apiKey + ".db"),
                 options.cacheFile || "price_cache.db",
                 options.fillsSync,
-                Math.max(1, Math.min(10, options.speed)));
+                Math.max(1, Math.min(10, options.speed || 9)));
         }
     });
 

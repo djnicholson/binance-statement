@@ -159,9 +159,9 @@ const handleFill = async(enumerationState, record) => {
     event.quoteAsset = record.QuoteAsset;
     event.market = record.Symbol;
     event.orderId = record.OrderId;
-    event.price = record.Price;
-    event.quantity = record.Quantity;
-    event.commission = record.Commission;
+    event.price = parseFloat(record.Price);
+    event.quantity = parseFloat(record.Quantity);
+    event.commission = parseFloat(record.Commission);
     event.commissionAsset = record.CommissionAsset;
     event.commissionDebitedFromProceeds = !!commissionDebitedFromProceeds;
     event.isMaker = !!record.IsMaker;

@@ -28,7 +28,6 @@ const synchronizeFills = async(binance, db, speed) => {
             let newRecords;
             do {
                 newRecords = false;
-                await sleepForBinance(speed);
                 const trades = await binance.myTrades({ symbol: symbol, fromId: mostRecentFill });
                 for (let j = 0; j < trades.length; j++) {
                     const trade = trades[j];
@@ -43,6 +42,8 @@ const synchronizeFills = async(binance, db, speed) => {
                     await db.logFill(trade.id, baseAsset, quoteAsset, symbol, trade.orderId, trade.price, trade.qty,
                         trade.commission, trade.commissionAsset, trade.time, trade.isBuyer, trade.isMaker, trade.isBestMatch);
                 }
+
+                await sleepForBinance(speed);
             } while (newRecords);
         }
     } finally {

@@ -109,10 +109,10 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
 const logEvent = event => {
     switch (event.eventType) {
         case Aggregator.EVENT_TYPE_BUY_AGGREGATION:
-            console.log('%s: Bought %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.baseAsset, event.value, event.totalPortfolioValue);
+            console.log('%s: Bought %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.quoteAsset, event.value, event.totalPortfolioValue);
             break;
         case Aggregator.EVENT_TYPE_SELL_AGGREGATION:
-            console.log('%s: Sold   %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.baseAsset, event.value, event.totalPortfolioValue);
+            console.log('%s: Sold   %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.quoteAsset, event.value, event.totalPortfolioValue);
             break;
         case Aggregator.EVENT_TYPE_BINANCE_CREDIT:
             console.log('%s: Binance credit: %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);

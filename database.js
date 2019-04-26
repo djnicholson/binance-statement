@@ -34,7 +34,6 @@ const lowerTimestamp = (thisRecord, otherRecords) => {
 class Database {
 
     static async open(dataFile) {
-        console.debug("Opening database ", dataFile);
         const db = await SqliteDatabase.open(dataFile);
         await initializeSchema(db);
         return new Database(db);
@@ -62,19 +61,19 @@ class Database {
             while (nextFill || nextDeposit || nextWithdrawal || nextBalance) {
                 if (lowerTimestamp(nextFill, [nextDeposit, nextWithdrawal, nextBalance])) {
                     nextFill.RecordType = Database.RECORD_TYPE_FILL;
-                    callback(nextFill);
+                    await callback(nextFill);
                     nextFill = await fillsReader.get();
                 } else if (lowerTimestamp(nextDeposit, [nextFill, nextWithdrawal, nextBalance])) {
                     nextDeposit.RecordType = Database.RECORD_TYPE_DEPOSIT;
-                    callback(nextDeposit);
+                    await callback(nextDeposit);
                     nextDeposit = await depositReader.get();
                 } else if (lowerTimestamp(nextWithdrawal, [nextFill, nextDeposit, nextBalance])) {
                     nextWithdrawal.RecordType = Database.RECORD_TYPE_WITHDRAWAL;
-                    callback(nextWithdrawal);
+                    await callback(nextWithdrawal);
                     nextWithdrawal = await withdrawalReader.get();
                 } else {
                     nextBalance.RecordType = Database.RECORD_TYPE_BALANCE;
-                    callback(nextBalance);
+                    await callback(nextBalance);
                     nextBalance = await balanceReader.get();
                 }
             }

@@ -2,6 +2,7 @@ const Binance = require('binance-api-node').default;
 
 const Aggregator = require('./aggregator');
 const Database = require('./database');
+const PriceCache = require('./price-cache');
 
 const sleepForBinance = async(speed) => {
     if (speed < 10) {
@@ -104,11 +105,12 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
-const main = async(apiKey, apiSecret, outputFile, dataFile, syncFillsFromBinance, speed) => {
+const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed) => {
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
-        const aggregator = new Aggregator(db, 'USDT');
+        const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
+        const aggregator = new Aggregator(db, priceCache, 'USDT');
 
         await takeBalanceSnapshot(binance, db, speed);
         await synchronizeDeposits(binance, db, speed);

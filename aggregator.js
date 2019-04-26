@@ -10,21 +10,23 @@ const adjustBalance = (balances, symbol, amount, isDebit) => {
 
 class Aggregator {
 
-    constructor(db, unitOfAccount) {
+    constructor(db, priceCache, unitOfAccount) {
         this.db = db;
+        this.priceCache = priceCache;
         this.unitOfAccount = unitOfAccount;
     }
 
     async go() {
         const balances = {};
-        await this.db.forEachRecord(record => {
+        await this.db.forEachRecord(async record => {
             switch (record.RecordType) {
                 case Database.RECORD_TYPE_FILL:
                     adjustBalance(balances, record.BaseAsset, record.Quantity, !record.IsBuyer);
                     adjustBalance(balances, record.QuoteAsset, record.Price * record.Quantity, record.IsBuyer);
                     adjustBalance(balances, record.CommissionAsset, record.Commission, true);
+                    const accountingPrice = await this.priceCache.getPrice(record.UtcTimestamp, record.BaseAsset, this.unitOfAccount, console.log);
                     console.log(
-                        '%d - Fill: %s%f %s %s%f %s -%f %s',
+                        '%d - Fill: %s%f %s %s%f %s -%f %s -- %f %s',
                         record.UtcTimestamp,
                         record.IsBuyer ? '+' : '-',
                         record.Quantity,
@@ -33,7 +35,9 @@ class Aggregator {
                         record.Price * record.Quantity,
                         record.QuoteAsset,
                         record.Commission,
-                        record.CommissionAsset);
+                        record.CommissionAsset,
+                        accountingPrice * record.Quantity,
+                        this.unitOfAccount);
                     break;
                 case Database.RECORD_TYPE_DEPOSIT:
                     if (record.Status != 0) {

@@ -33,12 +33,6 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
         }
     }
 
-    if (enumerationState.totalPortfolioValue !== null) {
-        event.changeInPortfolioValue = event.totalPortfolioValue - enumerationState.totalPortfolioValue;
-    }
-
-    enumerationState.totalPortfolioValue = event.totalPortfolioValue;
-
     await enumerationState.callback(event);
 
     enumerationState.lastEventTimestamp = event.utcTimestamp;
@@ -237,6 +231,8 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
 
 class Aggregator {
 
+    static get Event() { return Event; }
+
     constructor(db, priceCache, unitOfAccount, valuationIntervalInMinutes) {
         this.db = db;
         this.priceCache = priceCache;
@@ -251,11 +247,12 @@ class Aggregator {
     static get EVENT_TYPE_WITHDRAWAL() { return 'EVENT_TYPE_WITHDRAWAL'; }
     static get EVENT_TYPE_BINANCE_CREDIT() { return 'EVENT_TYPE_BINANCE_CREDIT'; }
     static get EVENT_TYPE_BINANCE_DEBIT() { return 'EVENT_TYPE_BINANCE_DEBIT'; }
+    static get EVENT_TYPE_BUY_AGGREGATION() { return 'EVENT_TYPE_BUY_AGGREGATION'; }
+    static get EVENT_TYPE_SELL_AGGREGATION() { return 'EVENT_TYPE_SELL_AGGREGATION'; }
 
     async enumerateEvents(callback) {
 
         const enumerationState = {
-            totalPortfolioValue: null,
             aggregator: this,
             callback: callback,
             lastEventTimestamp: 0,
@@ -282,6 +279,8 @@ class Aggregator {
                     break;
             }
         });
+
+        await emitSnapshotsUpUntil(enumerationState, (new Date).getTime());
     };
 
 }

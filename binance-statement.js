@@ -38,6 +38,8 @@ program
                 console.warn(colors.yellow('\nNot retriving fills from Binance; statement may be out of date.\n'));
             }
 
+            const unitsOfAccount = ['USDT', 'BTC'];
+
             await makeStatement(
                 options.apiKey,
                 options.apiSecret,
@@ -45,7 +47,8 @@ program
                 options.dataFile || (options.apiKey + ".db"),
                 options.cacheFile || "price_cache.db",
                 options.fillsSync,
-                Math.max(1, Math.min(10, options.speed || 9)));
+                Math.max(1, Math.min(10, options.speed || 9)),
+                unitsOfAccount);
         }
 
     });

@@ -137,13 +137,11 @@ const logEvent = event => {
     }
 };
 
-const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed) => {
+const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount) => {
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
         const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
-        const aggregator = new Aggregator(db, priceCache, 'BTC', /*valuationIntervalInMinutes*/ 60 * 6);
-        const fillCombiner = new FillCombiner(aggregator);
 
         await takeBalanceSnapshot(binance, db, speed);
         await synchronizeDeposits(binance, db, speed);
@@ -152,10 +150,16 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
 
         const htmlWriter = new HtmlWriter(outputFile);
         try {
-            await fillCombiner.enumerateEvents(event => {
-                logEvent(event);
-                htmlWriter.consumeEvent(event);
-            });
+            await htmlWriter.begin();
+            for (let i = 0; i < unitsOfAccount.length; i++) {
+                const unitOfAccount = unitsOfAccount[i];
+                const aggregator = new Aggregator(db, priceCache, unitOfAccount, /*valuationIntervalInMinutes*/ 60 * 6);
+                const fillCombiner = new FillCombiner(aggregator);
+                await fillCombiner.enumerateEvents(event => {
+                    logEvent(event);
+                    htmlWriter.consumeEvent(unitOfAccount, event);
+                });
+            }
         } finally {
             htmlWriter.end();
         }

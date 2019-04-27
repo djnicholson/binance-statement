@@ -1,3 +1,5 @@
+const BigNumber = require('bignumber.js');
+
 const Database = require('./database');
 
 class Event {
@@ -8,7 +10,7 @@ class Event {
 }
 
 const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
-    event.totalPortfolioValue = 0.0;
+    event.totalPortfolioValue = new BigNumber(0.0);
     event.valuationComposition = {};
     for (let asset in enumerationState.balances) {
         const balance = enumerationState.balances[asset];
@@ -24,10 +26,10 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
             } else if (assetPrice === undefined) {
                 event.valuationComposition[asset] = undefined;
             } else {
-                const assetValue = assetPrice * balance;
+                const assetValue = assetPrice.multipliedBy(balance);
                 event.valuationComposition[asset] = assetValue;
                 if (event.totalPortfolioValue !== null) {
-                    event.totalPortfolioValue += assetValue;
+                    event.totalPortfolioValue = event.totalPortfolioValue.plus(assetValue);
                 }
             }
         }
@@ -52,10 +54,10 @@ const emitSnapshotsUpUntil = async(enumerationState, utcTimestamp) => {
 
 const adjustBalance = (enumerationState, asset, adjustment) => {
     if (!enumerationState.balances[asset]) {
-        enumerationState.balances[asset] = 0;
+        enumerationState.balances[asset] = new BigNumber(0.0);
     }
 
-    enumerationState.balances[asset] += parseFloat(adjustment);
+    enumerationState.balances[asset] = enumerationState.balances[asset].plus(new BigNumber(adjustment));
 };
 
 const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasisQuantity, sourceDescription, utcTimestamp) => {
@@ -67,8 +69,8 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
 
     const lots = enumerationState.lots[asset];
     lots.push({
-        quantity: parseFloat(quantity),
-        costBasisPrice: priceOfCostBasisAsset ? (priceOfCostBasisAsset * costBasisQuantity) / quantity : null,
+        quantity: new BigNumber(quantity),
+        costBasisPrice: priceOfCostBasisAsset ? priceOfCostBasisAsset.multipliedBy(costBasisQuantity).dividedBy(quantity) : null,
         sourceDescription: sourceDescription,
         utcTimestamp: utcTimestamp,
     });
@@ -77,20 +79,20 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
 const matchLots = (enumerationState, asset, amount) => {
     const lots = enumerationState.lots[asset] || [];
     const result = [];
-    let amountRemaining = amount;
-    while (amountRemaining > 0) {
+    let amountRemaining = new BigNumber(amount);
+    while (amountRemaining.isGreaterThan(0)) {
         if (lots.length == 0) {
             result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: null, sourceDescription: 'Unknown', utcTimestamp: null });
-            amountRemaining = 0;
+            amountRemaining = new BigNumber(0);
         } else {
             var peek = lots[0];
-            if (peek.quantity > amountRemaining) {
+            if (peek.quantity.isGreaterThan(amountRemaining)) {
                 result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: peek.costBasisPrice, sourceDescription: peek.sourceDescription, utcTimestamp: peek.utcTimestamp });
-                amountRemaining = 0;
-                peek.quantity -= amountRemaining;
+                amountRemaining = new BigNumber(0);
+                peek.quantity = peek.quantity.minus(amountRemaining);
             } else {
                 result.push({ asset: asset, quantity: peek.quantity, costBasisPrice: peek.costBasisPrice, sourceDescription: peek.sourceDescription, utcTimestamp: peek.utcTimestamp });
-                amountRemaining -= peek.quantity;
+                amountRemaining = amountRemaining.minus(peek.quantity);
                 lots.shift();
             }
         }
@@ -102,7 +104,7 @@ const matchLots = (enumerationState, asset, amount) => {
 const handleFill = async(enumerationState, record) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
-    adjustBalance(enumerationState, record.CommissionAsset, -1 * record.Commission);
+    adjustBalance(enumerationState, record.CommissionAsset, new BigNumber(record.Commission).multipliedBy(-1));
 
     const commissionDebitedFromProceeds =
         (record.CommissionAsset !== 'BNB') ||
@@ -114,14 +116,14 @@ const handleFill = async(enumerationState, record) => {
     if (record.IsBuyer) {
 
         adjustBalance(enumerationState, record.BaseAsset, record.Quantity);
-        adjustBalance(enumerationState, record.QuoteAsset, -1 * (record.Quantity * record.Price));
+        adjustBalance(enumerationState, record.QuoteAsset, new BigNumber(-1).multipliedBy(record.Quantity).multipliedBy(record.Price));
 
         await addLot(
             enumerationState,
             record.BaseAsset,
             record.Quantity,
             record.QuoteAsset,
-            record.Price * record.Quantity,
+            new BigNumber(record.Price).multipliedBy(record.Quantity),
             'Bought using ' + record.QuoteAsset,
             record.UtcTimestamp);
 
@@ -130,8 +132,8 @@ const handleFill = async(enumerationState, record) => {
 
     } else {
 
-        adjustBalance(enumerationState, record.BaseAsset, -1 * record.Quantity);
-        adjustBalance(enumerationState, record.QuoteAsset, record.Quantity * record.Price);
+        adjustBalance(enumerationState, record.BaseAsset, new BigNumber(record.Quantity).multipliedBy(-1));
+        adjustBalance(enumerationState, record.QuoteAsset, new BigNumber(record.Quantity).multipliedBy(record.Price));
 
         event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_SELL);
         event.lots = commissionLots.concat(matchLots(enumerationState, record.BaseAsset, record.Quantity));
@@ -153,14 +155,14 @@ const handleFill = async(enumerationState, record) => {
     event.quoteAsset = record.QuoteAsset;
     event.market = record.Symbol;
     event.orderId = record.OrderId;
-    event.price = parseFloat(record.Price);
-    event.quantity = parseFloat(record.Quantity);
-    event.commission = parseFloat(record.Commission);
+    event.price = new BigNumber(record.Price);
+    event.quantity = new BigNumber(record.Quantity);
+    event.commission = new BigNumber(record.Commission);
     event.commissionAsset = record.CommissionAsset;
     event.commissionDebitedFromProceeds = !!commissionDebitedFromProceeds;
     event.isMaker = !!record.IsMaker;
-    event.commissionValue = commissionAssetPrice ? commissionAssetPrice * record.Commission : null;
-    event.value = baseAssetPrice ? baseAssetPrice * record.Quantity : null;
+    event.commissionValue = commissionAssetPrice ? commissionAssetPrice.multipliedBy(record.Commission) : null;
+    event.value = baseAssetPrice ? baseAssetPrice.multipliedBy(record.Quantity) : null;
 
     await appendPortfolioValuationAndEmit(enumerationState, event);
 };
@@ -178,7 +180,7 @@ const handleDeposit = async(enumerationState, record) => {
 
     const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_DEPOSIT);
     event.asset = record.Asset;
-    event.amount = record.Amount;
+    event.amount = new BigNumber(record.Amount);
     await appendPortfolioValuationAndEmit(enumerationState, event);
 };
 
@@ -189,11 +191,11 @@ const handleWithdrawal = async(enumerationState, record) => {
         return;
     }
 
-    adjustBalance(enumerationState, record.Asset, -1 * record.Amount);
+    adjustBalance(enumerationState, record.Asset, new BigNumber(-1).multipliedBy(record.Amount));
 
     const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_WITHDRAWAL);
     event.asset = record.Asset;
-    event.amount = record.Amount;
+    event.amount = new BigNumber(record.Amount);
     event.lots = matchLots(enumerationState, record.Asset, record.Amount);
     await appendPortfolioValuationAndEmit(enumerationState, event);
 };
@@ -201,14 +203,14 @@ const handleWithdrawal = async(enumerationState, record) => {
 const handleBalanceCheckpoint = async(enumerationState, record) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
-    const expectedBalance = enumerationState.balances[record.Asset] || 0.0;
-    const actualBalance = parseFloat(record.Free) + parseFloat(record.Locked);
-    const adjustment = actualBalance - expectedBalance;
-    if (adjustment != 0) {
+    const expectedBalance = enumerationState.balances[record.Asset] || new BigNumber(0.0);
+    const actualBalance = new BigNumber(record.Free).plus(record.Locked);
+    const adjustment = actualBalance.minus(expectedBalance);
+    if (!adjustment.isZero()) {
 
         adjustBalance(enumerationState, record.Asset, adjustment);
 
-        if (adjustment > 0) {
+        if (adjustment.isGreaterThan(0.0)) {
 
             await addLot(enumerationState, record.Asset, adjustment, record.Asset, 0, 'Credited by Binance', record.UtcTimestamp);
 
@@ -221,8 +223,8 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
 
             const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_DEBIT);
             event.asset = record.Asset;
-            event.amount = -1 * adjustment;
-            event.lots = matchLots(enumerationState, record.Asset, -1 * adjustment);
+            event.amount = adjustment.multipliedBy(-1);
+            event.lots = matchLots(enumerationState, record.Asset, adjustment.multipliedBy(-1));
             await appendPortfolioValuationAndEmit(enumerationState, event);
 
         }

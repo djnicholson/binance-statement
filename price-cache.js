@@ -1,3 +1,4 @@
+const BigNumber = require('bignumber.js');
 const SqliteDatabase = require('sqlite-async');
 
 const initializeSchema = async(db) => {
@@ -48,20 +49,20 @@ class PriceCache {
         utcTimestamp = (Math.round(utcTimestamp / (1000 * 60)) * (1000 * 60) + (30 * 1000));
 
         if (baseAsset === quoteAsset) {
-            return 1.0;
+            return new BigNumber(1.0);
         }
 
         const selectQuery = 'SELECT * FROM Prices WHERE UtcTimestamp = $utcTimestamp AND BaseAsset = $baseAsset AND QuoteAsset = $quoteAsset LIMIT 1';
         const row = await this.db.get(selectQuery, { $utcTimestamp: utcTimestamp, $baseAsset: baseAsset, $quoteAsset: quoteAsset });
         if (row) {
-            return row.Price || undefined;
+            return new BigNumber(row.Price) || undefined;
         }
 
         let price = null; // a null result implies that the price is currently not known
 
         const directCandle = await this.getNearestCandle(baseAsset + quoteAsset, PriceCache.INTERVAL_1_MINUTE, utcTimestamp, statusCallback);
         if (directCandle) {
-            price = (parseFloat(directCandle.High) + parseFloat(directCandle.Low)) / 2.0;
+            price = (new BigNumber(directCandle.High)).plus(directCandle.Low).dividedBy(2.0);
         } else if (directCandle === undefined) { // candle for this asset pair will never exist
             if (avoidIndirectCalculation) {
                 return undefined;
@@ -75,7 +76,7 @@ class PriceCache {
                     } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
                         price = null; // come back later
                     } else {
-                        price = baseAssetBtcPrice / quoteAssetBtcPrice;
+                        price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
                     }
                 }
             }
@@ -87,7 +88,7 @@ class PriceCache {
                 $utcTimestamp: utcTimestamp,
                 $baseAsset: baseAsset,
                 $quoteAsset: quoteAsset,
-                $price: price || null,
+                $price: price ? price.toString() : null,
             });
         }
 

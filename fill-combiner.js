@@ -1,3 +1,5 @@
+const BigNumber = require('bignumber.js');
+
 const Aggregator = require('./aggregator');
 
 const emitBufferContents = async(fillBuffer, callback) => {
@@ -18,18 +20,18 @@ const emitBufferContents = async(fillBuffer, callback) => {
     aggregateEvent.market = fillBuffer[0].market;
     aggregateEvent.orderId = fillBuffer[0].orderId;
 
-    let totalSpend = 0;
-    aggregateEvent.commissionValue = 0;
-    aggregateEvent.value = 0;
-    aggregateEvent.quantity = 0;
+    let totalSpend = new BigNumber(0.0);
+    aggregateEvent.commissionValue = new BigNumber(0.0);
+    aggregateEvent.value = new BigNumber(0.0);
+    aggregateEvent.quantity = new BigNumber(0.0);
     for (let i = 0; i < fillBuffer.length; i++) {
-        totalSpend += fillBuffer[i].price * fillBuffer[i].quantity;
-        aggregateEvent.commissionValue += fillBuffer[i].commissionValue;
-        aggregateEvent.value += fillBuffer[i].value;
-        aggregateEvent.quantity += fillBuffer[i].quantity;
+        totalSpend = totalSpend.plus(fillBuffer[i].price.multipliedBy(fillBuffer[i].quantity));
+        aggregateEvent.commissionValue = aggregateEvent.commissionValue.plus(fillBuffer[i].commissionValue);
+        aggregateEvent.value = aggregateEvent.value.plus(fillBuffer[i].value);
+        aggregateEvent.quantity = aggregateEvent.quantity.plus(fillBuffer[i].quantity);
     }
 
-    aggregateEvent.price = totalSpend / aggregateEvent.quantity;
+    aggregateEvent.price = totalSpend.dividedBy(aggregateEvent.quantity);
 
     aggregateEvent.fills = fillBuffer;
 

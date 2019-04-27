@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/djnicholson/binance-statement#readme",
   "dependencies": {
+    "bignumber.js": "^8.1.1",
     "binance-api-node": "^0.9.0",
     "colors": "^1.3.3",
     "commander": "^2.20.0",

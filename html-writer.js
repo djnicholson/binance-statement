@@ -42,15 +42,14 @@ class HtmlWriter {
             .replace('<!--inject(rendererCode)-->', '<script>' + rendererCode + '</script>');
 
         this.file.write(prelude);
-
-        this.file.write('<script>');
     }
 
     consumeEvent(unitOfAccount, event) {
-        this.file.write('statement.pushEvent(' + JSON.stringify(unitOfAccount) + ', ' + JSON.stringify(event) + ');\r\n');
+        this.file.write('<script>statement.pushEvent(' + JSON.stringify(unitOfAccount) + ', ' + JSON.stringify(event) + ');</script>\r\n');
     }
 
     end() {
+        this.file.write('<script>');
         this.file.write('statement.loadingComplete();\r\n');
         this.file.write('</script>');
         this.epilogue && this.file.write(this.epilogue);

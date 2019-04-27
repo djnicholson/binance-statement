@@ -110,7 +110,16 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
+const logInterval = 2 * 1000;
+
+let lastLogEmission = 0;
+
 const logEvent = event => {
+    const utcNow = (new Date).getTime();
+    if (lastLogEmission + logInterval > utcNow) {
+        return;
+    }
+
     const numberString = n => n ? n.toFixed() : "(unknown)";
     switch (event.eventType) {
         case Aggregator.EVENT_TYPE_BUY_AGGREGATION:
@@ -135,6 +144,8 @@ const logEvent = event => {
             console.log('%s:                              portfolio value: %s', new Date(event.utcTimestamp), numberString(event.totalPortfolioValue));
             break;
     }
+
+    lastLogEmission = utcNow;
 };
 
 const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount) => {

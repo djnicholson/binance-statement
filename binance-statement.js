@@ -16,16 +16,24 @@ program
     .option('-n, --no-fills-sync', 'Skip syncing fill data from Binance (takes a long time)')
     .option('-S --speed <n>', 'A number between 1 and 10 (10 is fastest). Too fast may cause Binance throttling.', parseInt)
     .action(async(options) => {
+
         if (!options.apiKey) {
+
             program.outputHelp();
             console.error(colors.red('\nThe --api-key option is required\n'));
+
         } else if (!options.apiSecret) {
+
             program.outputHelp();
             console.error(colors.red('\nThe --api-secret option is required\n'));
+
         } else if (!options.outputFile) {
+
             program.outputHelp();
             console.error(colors.red('\nThe --output-file option is required\n'));
+
         } else {
+
             if (!options.fillsSync) {
                 console.warn(colors.yellow('\nNot retriving fills from Binance; statement may be out of date.\n'));
             }
@@ -39,6 +47,7 @@ program
                 options.fillsSync,
                 Math.max(1, Math.min(10, options.speed || 9)));
         }
+
     });
 
 program.parse(process.argv);

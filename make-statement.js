@@ -3,6 +3,7 @@ const Binance = require('binance-api-node').default;
 const Aggregator = require('./aggregator');
 const Database = require('./database');
 const FillCombiner = require('./fill-combiner');
+const HtmlWriter = require('./html-writer');
 const PriceCache = require('./price-cache');
 
 const sleepForBinance = async(speed) => {
@@ -141,7 +142,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
         const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
-        const aggregator = new Aggregator(db, priceCache, 'USDT', /*valuationIntervalInMinutes*/ 60 * 6);
+        const aggregator = new Aggregator(db, priceCache, 'BTC', /*valuationIntervalInMinutes*/ 60 * 6);
         const fillCombiner = new FillCombiner(aggregator);
 
         await takeBalanceSnapshot(binance, db, speed);
@@ -149,7 +150,16 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
         await synchronizeWithdrawals(binance, db, speed);
         syncFillsFromBinance && await synchronizeFills(binance, db, speed);
 
-        await fillCombiner.enumerateEvents(logEvent);
+        const htmlWriter = new HtmlWriter(outputFile);
+        try {
+            await fillCombiner.enumerateEvents(event => {
+                logEvent(event);
+                htmlWriter.consumeEvent(event);
+            });
+        } finally {
+            htmlWriter.end();
+        }
+
     } catch (e) {
         console.error(e);
     }

@@ -15,7 +15,8 @@ const sleepForBinance = async(speed) => {
 
 const synchronizeFills = async(binance, db, speed) => {
     console.debug('Synchronizing fills');
-    global.process.stdout.write("[0%] Preparing...");
+    const isTty = !!process.stdout.clearLine;
+    isTty && process.stdout.write("[0%] Preparing...");
     const exchangeInfo = await binance.exchangeInfo();
     try {
         for (let i = 0; i < exchangeInfo.symbols.length; i++) {
@@ -23,9 +24,10 @@ const synchronizeFills = async(binance, db, speed) => {
             const baseAsset = exchangeInfo.symbols[i].baseAsset;
             const quoteAsset = exchangeInfo.symbols[i].quoteAsset;
             const symbol = exchangeInfo.symbols[i].symbol;
-            global.process.stdout.clearLine();
-            global.process.stdout.cursorTo(0);
-            global.process.stdout.write('[' + progressString + '] Synchronizing fills in ' + symbol);
+            isTty && process.stdout.clearLine();
+            isTty && process.stdout.cursorTo(0);
+            isTty && process.stdout.write('[' + progressString + '] Synchronizing fills in ' + symbol);
+            !isTty && console.debug('[' + progressString + '] Synchronizing fills in ' + symbol);
             let mostRecentFill = await db.getMostRecentFillId(symbol);
             let newRecords;
             do {
@@ -38,9 +40,10 @@ const synchronizeFills = async(binance, db, speed) => {
                         newRecords = true;
                     }
 
-                    global.process.stdout.clearLine();
-                    global.process.stdout.cursorTo(0);
-                    global.process.stdout.write('[' + progressString + '] Logging fill in ' + symbol + ' (' + trade.qty + ' @ ' + trade.price + ' on ' + trade.time + ')');
+                    isTty && process.stdout.clearLine();
+                    isTty && process.stdout.cursorTo(0);
+                    isTty && process.stdout.write('[' + progressString + '] Logging fill in ' + symbol + ' (' + trade.qty + ' @ ' + trade.price + ' on ' + trade.time + ')');
+                    !isTty && console.debug('[' + progressString + '] Logging fill in ' + symbol + ' (' + trade.qty + ' @ ' + trade.price + ' on ' + trade.time + ')');
                     await db.logFill(trade.id, baseAsset, quoteAsset, symbol, trade.orderId, trade.price, trade.qty,
                         trade.commission, trade.commissionAsset, trade.time, trade.isBuyer, trade.isMaker, trade.isBestMatch);
                 }
@@ -49,8 +52,8 @@ const synchronizeFills = async(binance, db, speed) => {
             } while (newRecords);
         }
     } finally {
-        global.process.stdout.clearLine();
-        global.process.stdout.cursorTo(0);
+        isTty && process.stdout.clearLine();
+        isTty && process.stdout.cursorTo(0);
     }
 };
 

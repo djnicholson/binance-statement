@@ -110,27 +110,28 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
 };
 
 const logEvent = event => {
+    const numberString = n => n ? n.toFixed() : "(unknown)";
     switch (event.eventType) {
         case Aggregator.EVENT_TYPE_BUY_AGGREGATION:
-            console.log('%s: Bought %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.quoteAsset, event.value, event.totalPortfolioValue);
+            console.log('%s: Bought          %s %s @ %s %s; value: %s; portfolio value: %f', new Date(event.utcTimestamp), numberString(event.quantity), event.baseAsset, numberString(event.price), event.quoteAsset, numberString(event.value), numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_SELL_AGGREGATION:
-            console.log('%s: Sold   %f %s @ %f %s; value: %f; portfolio value: %f', new Date(event.utcTimestamp), event.quantity, event.baseAsset, event.price, event.quoteAsset, event.value, event.totalPortfolioValue);
+            console.log('%s: Sold            %s %s @ %s %s; value: %s; portfolio value: %f', new Date(event.utcTimestamp), numberString(event.quantity), event.baseAsset, numberString(event.price), event.quoteAsset, numberString(event.value), numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_BINANCE_CREDIT:
-            console.log('%s: Binance credit: %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);
+            console.log('%s: Binance credit: %s %s; portfolio value: %s', new Date(event.utcTimestamp), numberString(event.amount), event.asset, numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_BINANCE_DEBIT:
-            console.log('%s: Binance debit:  %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);
+            console.log('%s: Binance debit:  %s %s; portfolio value: %s', new Date(event.utcTimestamp), numberString(event.amount), event.asset, numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_DEPOSIT:
-            console.log('%s: Deposit:        %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);
+            console.log('%s: Deposit:        %s %s; portfolio value: %s', new Date(event.utcTimestamp), numberString(event.amount), event.asset, numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_WITHDRAWAL:
-            console.log('%s: Withdrawal:     %f %s; portfolio value: %f', new Date(event.utcTimestamp), event.amount, event.asset, event.totalPortfolioValue);
+            console.log('%s: Withdrawal:     %s %s; portfolio value: %s', new Date(event.utcTimestamp), numberString(event.amount), event.asset, numberString(event.totalPortfolioValue));
             break;
         case Aggregator.EVENT_TYPE_SNAPSHOT:
-            console.log('%s:                              portfolio value: %f', new Date(event.utcTimestamp), event.totalPortfolioValue);
+            console.log('%s:                              portfolio value: %s', new Date(event.utcTimestamp), numberString(event.totalPortfolioValue));
             break;
     }
 };

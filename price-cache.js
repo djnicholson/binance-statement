@@ -69,8 +69,8 @@ class PriceCache {
             } else {
                 price = await this.getPrice(utcTimestamp, quoteAsset, baseAsset, statusCallback, /*avoidIndirectCalculation*/ true);
                 if (price === undefined) { // candle for inverted asset pair will never exist
-                    const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback, /*avoidIndirectCalculation*/ true);
-                    const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback, /*avoidIndirectCalculation*/ true);
+                    const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback);
+                    const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback);
                     if ((baseAssetBtcPrice === undefined) || (quoteAssetBtcPrice === undefined)) {
                         price = undefined; // price will never be known
                     } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
@@ -78,6 +78,8 @@ class PriceCache {
                     } else {
                         price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
                     }
+                } else if (price !== null) {
+                    price = new BigNumber(1.0).dividedBy(price);
                 }
             }
         }
@@ -112,8 +114,14 @@ class PriceCache {
         try {
             await this.preBinanceCallback();
             const candles = await this.binance.candles({ symbol: symbol, interval: interval, endTime: utcTimestamp, limit: 1 });
-            candles[0] && (candles[0].closeTime < (new Date).getTime()) && (candle = candles[0]);
-            statusCallback && statusCallback('Retrieved ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + '...');
+            if (candles.length == 0) {
+                candle = undefined; // this timestamp is probably before the creation date of this market
+            } else if (candles[0].closeTime < (new Date).getTime()) {
+                candle = candles[0];
+                statusCallback && statusCallback('Retrieved ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + '...');
+            } else {
+                candle = null; // candle is still partial; come back later
+            }
         } catch (e) {
             candle = undefined; // an undefined result implies that the candle will never exist
             if ((e + '').toLowerCase().indexOf('invalid symbol') == -1) {

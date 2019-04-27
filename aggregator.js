@@ -14,7 +14,7 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
     event.valuationComposition = {};
     for (let asset in enumerationState.balances) {
         const balance = enumerationState.balances[asset];
-        if (balance > 0) {
+        if (balance.isGreaterThan(0)) {
             const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
                 event.utcTimestamp,
                 asset,

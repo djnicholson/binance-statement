@@ -2,6 +2,16 @@ var fs = require('fs');
 var path = require('path');
 const util = require('util');
 
+const readFileContents = async(file) => {
+    const readFile = util.promisify(fs.readFile);
+    return (await readFile(file)).toString();
+}
+
+const getDependencySource = async(dependency) => {
+    const fullPath = require.resolve(dependency);
+    return await readFileContents(fullPath);
+};
+
 class HtmlWriter {
 
     constructor(outputFile) {
@@ -9,11 +19,26 @@ class HtmlWriter {
     }
 
     async begin() {
-        const readFile = util.promisify(fs.readFile);
         const templateFile = path.join(__dirname, 'template.html');
-        const templateContents = await readFile(templateFile);
-        this.templateParts = templateContents.toString().split('%pushEvents', 2);
-        this.file.write(this.templateParts[0]);
+        const templateContents = await readFileContents(templateFile);
+        const templateParts = templateContents.split('<!--inject(events)-->', 2);
+        const preludeTemplate = templateParts[0];
+        this.epilogue = templateParts[1];
+
+        const bootstrapCss = await getDependencySource('bootstrap/dist/css/bootstrap.min.css');
+        const jqueryJs = await getDependencySource('jquery/dist/jquery.min.js');
+        const popperJs = await getDependencySource('popper.js/dist/popper.min.js');
+        const bootstrapJs = await getDependencySource('bootstrap/dist/js/bootstrap.min.js');
+
+        const prelude = preludeTemplate
+            .replace('<!--inject(bootstrapCSS)-->', '<style type="text/css">' + bootstrapCss + '</style>')
+            .replace('<!--inject(jqueryJs)-->', '<script>' + jqueryJs + '</script>')
+            .replace('<!--inject(popperJs)-->', '<script>' + popperJs + '</script>')
+            .replace('<!--inject(bootstrapJs)-->', '<script>' + bootstrapJs + '</script>');
+
+        this.file.write(prelude);
+
+        this.file.write('<script>');
     }
 
     consumeEvent(unitOfAccount, event) {
@@ -21,7 +46,8 @@ class HtmlWriter {
     }
 
     end() {
-        this.templateParts && this.file.write(this.templateParts[1]);
+        this.file.write('</script>');
+        this.epilogue && this.file.write(this.epilogue);
         this.file.end();
     }
 

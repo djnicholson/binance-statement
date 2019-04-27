@@ -5,12 +5,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Binance statement</title>
-    <!--inject(bootstrapCSS)-->
+    <!--inject(css)-->
 </head>
 
 <body>
 
-    <ul id="bs-unit-selector">
+    <ul id="bs-unit-selector" class="d-none">
+        <li><a class="disabled">Unit of account:</a></li>
     </ul>
 
     <div id="bs-statements">
@@ -39,6 +40,7 @@
 
     <script id="bs-month-page-template" type="text/x-template">
         <div class="bs-month-page">
+            <div class="bs-title"></div>
             <table>
                 <thead>
                     <tr>

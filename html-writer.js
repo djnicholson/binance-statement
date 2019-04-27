@@ -1,5 +1,6 @@
 var fs = require('fs');
 var path = require('path');
+var sass = require('sass');
 const util = require('util');
 
 const readFileContents = async(file) => {
@@ -29,13 +30,16 @@ class HtmlWriter {
         const rendererFile = path.join(__dirname, 'renderer.js');
         const rendererCode = await readFileContents(rendererFile);
 
-        const bootstrapCss = await getDependencySource('bootstrap/dist/css/bootstrap.min.css');
+        const scssFile = path.join(__dirname, 'styles.scss');
+        const result = await sass.renderSync({ file: scssFile });
+        const css = result.css.toString();
+
         const jqueryJs = await getDependencySource('jquery/dist/jquery.min.js');
         const popperJs = await getDependencySource('popper.js/dist/umd/popper.min.js');
         const bootstrapJs = await getDependencySource('bootstrap/dist/js/bootstrap.min.js');
 
         const prelude = preludeTemplate
-            .replace('<!--inject(bootstrapCSS)-->', '<style type="text/css">' + bootstrapCss + '</style>')
+            .replace('<!--inject(css)-->', '<style type="text/css">' + css + '</style>')
             .replace('<!--inject(jqueryJs)-->', '<script>' + jqueryJs + '</script>')
             .replace('<!--inject(popperJs)-->', '<script>' + popperJs + '</script>')
             .replace('<!--inject(bootstrapJs)-->', '<script>' + bootstrapJs + '</script>')

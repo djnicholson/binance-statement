@@ -15,15 +15,23 @@ var Statement = function() {
 
     var switchMonth = function(allMonthPages, pageIdToShow) {
         activeMonth = pageIdToShow;
+        $('a.bs-month').removeClass('active');
+        $('a.bs-' + activeMonth).addClass('active');
         for (var pageId in allMonthPages) {
-            allMonthPages[pageId][(pageId == pageIdToShow) ? 'show' : 'hide']();
+            allMonthPages[pageId][(pageId == activeMonth) ? 'show' : 'hide']();
         }
     };
 
     var getStatementPageForUnitOfAccount = function(unitOfAccount) {
         if (!statementPages[unitOfAccount]) {
             var switcherLink = $($('#bs-unit-switch-template').html());
-            switcherLink.find('a').click(() => switchUnit(unitOfAccount)).text(unitOfAccount);
+            switcherLink.find('a').text(unitOfAccount).click(() => {
+                switchUnit(unitOfAccount);
+                switcherLink.parent().find('a').removeClass('active');
+                switcherLink.find('a').addClass('active');
+            });
+            !anyStatementPages && switcherLink.find('a').addClass('active');
+            $('#bs-unit-selector').removeClass('d-none');
             $('#bs-unit-selector').append(switcherLink);
             statementPages[unitOfAccount] = $($('#bs-statement-template').html());
             statementPages[unitOfAccount].monthPages = {};
@@ -36,15 +44,23 @@ var Statement = function() {
         return statementPages[unitOfAccount];
     };
 
-    var getPageForMonth = function(statementPage, year, month) {
+    var getPageForMonth = function(statementPage, eventDate) {
+        var year = eventDate.getFullYear();
+        var month = eventDate.getMonth() + 1;
         var pageId = year + '-' + month;
         if (!statementPage.monthPages[pageId]) {
+            var monthName = eventDate.toLocaleString('default', { month: 'long' });
+            var monthNameShort = eventDate.toLocaleString('default', { month: 'short' });
             statementPage.monthPages[pageId] = $($('#bs-month-page-template').html());
+            statementPage.monthPages[pageId].find('.bs-title').text(monthName + ' ' + year);
             statementPage.find('.bs-month-pages').append(statementPage.monthPages[pageId]);
             !statementPage.anyMonthPages || statementPage.monthPages[pageId].hide();
-            statementPage.anyMonthPages = true;
             var switcherLink = $($('#bs-month-switch-template').html());
-            switcherLink.find('a').click(() => switchMonth(statementPage.monthPages, pageId)).text(pageId);
+            switcherLink.find('a').addClass('bs-month bs-' + pageId).text(monthNameShort + ' ' + year).click(() => {
+                switchMonth(statementPage.monthPages, pageId);
+            });
+            !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
+            statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
         }
 
@@ -70,7 +86,7 @@ var Statement = function() {
     var renderEvent = function(unitOfAccount, event) {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
-        var monthPage = getPageForMonth(statementPage, eventDate.getFullYear(), eventDate.getMonth() + 1);
+        var monthPage = getPageForMonth(statementPage, eventDate);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthPage.find('tbody');
             var row = $($('#bs-activity-row-template').html());
@@ -104,7 +120,8 @@ var Statement = function() {
 
 var statement = new Statement();
 
-var RENDER_INTERVAL = 1000;
+var RENDER_INTERVAL = 1500;
+var FIRST_RENDER = 500;
 
 var onTimer = function() {
     statement.renderNewEvents();
@@ -113,4 +130,4 @@ var onTimer = function() {
     }
 };
 
-onTimer();
+setTimeout(onTimer, FIRST_RENDER);

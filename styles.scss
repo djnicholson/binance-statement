@@ -1,0 +1,51 @@
+@import "node_modules/bootstrap/scss/bootstrap";
+body {
+    @extend .container-fluid;
+    @extend .pt-3;
+}
+
+ul#bs-unit-selector {
+    @extend .nav;
+    @extend .nav-pills;
+    @extend .justify-content-end;
+    li {
+        @extend .nav-item;
+        a {
+            @extend .nav-link;
+            cursor: pointer;
+        }
+    }
+}
+
+#bs-statements {
+    @extend .pt-3;
+}
+
+ul.bs-month-selector {
+    @extend .nav;
+    @extend .nav-tabs;
+    li {
+        @extend .nav-item;
+        a {
+            @extend .nav-link;
+            cursor: pointer;
+        }
+    }
+}
+
+.bs-month-page {
+    @extend .pt-3;
+}
+
+.bs-title {
+    @extend .h4;
+}
+
+table {
+    @extend .table;
+}
+
+.bs-month-page table {
+    @extend .table-hover;
+    @extend .table-sm;
+}

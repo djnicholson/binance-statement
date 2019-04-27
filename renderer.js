@@ -51,6 +51,22 @@ var Statement = function() {
         return statementPage.monthPages[pageId];
     };
 
+    var activityDescriptions = {
+        'EVENT_TYPE_BUY_AGGREGATION': 'Bought',
+        'EVENT_TYPE_SELL_AGGREGATION': 'Sold',
+        'EVENT_TYPE_DEPOSIT': 'Deposited',
+        'EVENT_TYPE_WITHDRAWAL': 'Withdrew',
+        'EVENT_TYPE_BINANCE_CREDIT': 'Account credited',
+        'EVENT_TYPE_BINANCE_DEBIT': 'Account debited',
+    };
+
+    var populateMainRow = function(row, event, eventDate) {
+        row.find('.bs-date').text(eventDate.toString());
+        row.find('.bs-activity').text(activityDescriptions[event.eventType]);
+        row.find('.bs-asset').text(event.asset || event.baseAsset);
+        row.find('.bs-amount').text(event.amount || event.quantity);
+    }
+
     var renderEvent = function(unitOfAccount, event) {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
@@ -58,8 +74,7 @@ var Statement = function() {
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthPage.find('tbody');
             var row = $($('#bs-activity-row-template').html());
-            row.find('.bs-date').text(eventDate.toString());
-            row.find('.bs-activity').text(event.eventType);
+            populateMainRow(row, event, eventDate);
             tableBody.append(row);
         }
 

@@ -1,21 +1,23 @@
 var Statement = function() {
 
-    console.log("Renderer starting...");
-
     var allEvents = {};
     var statementPages = {};
     var anyStatementPages = false;
+    var activeMonth = null;
 
     this.isLoading = true;
 
     var switchUnit = function(unitOfAccount) {
         $('.bs-statement').hide();
         statementPages[unitOfAccount].show();
+        activeMonth && switchMonth(statementPages[unitOfAccount].monthPages, activeMonth);
     };
 
-    var switchMonth = function(monthPage) {
-        $('.bs-month-page').hide();
-        monthPage.show();
+    var switchMonth = function(allMonthPages, pageIdToShow) {
+        activeMonth = pageIdToShow;
+        for (var pageId in allMonthPages) {
+            allMonthPages[pageId][(pageId == pageIdToShow) ? 'show' : 'hide']();
+        }
     };
 
     var getStatementPageForUnitOfAccount = function(unitOfAccount) {
@@ -42,7 +44,7 @@ var Statement = function() {
             !statementPage.anyMonthPages || statementPage.monthPages[pageId].hide();
             statementPage.anyMonthPages = true;
             var switcherLink = $($('#bs-month-switch-template').html());
-            switcherLink.find('a').click(() => switchMonth(statementPage.monthPages[pageId])).text(pageId);
+            switcherLink.find('a').click(() => switchMonth(statementPage.monthPages, pageId)).text(pageId);
             statementPage.find('.bs-month-selector').append(switcherLink);
         }
 

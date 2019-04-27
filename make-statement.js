@@ -137,7 +137,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
         const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
-        const aggregator = new Aggregator(db, priceCache, 'USDT', /*valuationIntervalInMinutes*/ 60 * 3);
+        const aggregator = new Aggregator(db, priceCache, 'USDT', /*valuationIntervalInMinutes*/ 60 * 6);
         const fillCombiner = new FillCombiner(aggregator);
 
         await takeBalanceSnapshot(binance, db, speed);

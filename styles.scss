@@ -7,6 +7,7 @@ $warning: #4584E3;
 body {
     @extend .container-fluid;
     @extend .pt-3;
+    font-size: 0.7em;
 }
 
 ul#bs-unit-selector {

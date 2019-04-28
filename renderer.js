@@ -12,15 +12,15 @@ var Statement = function() {
             duration: 0,
         },
         scales: {
-            yAxes: [{
-                stacked: true
-            }],
             xAxes: [{
                 type: 'time',
                 time: {
-                    unit: 'day'
+                    unit: 'day',
                 }
             }]
+        },
+        tooltips: {
+            mode: 'x',
         }
     };
 

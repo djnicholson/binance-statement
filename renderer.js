@@ -11,6 +11,9 @@ var Statement = function() {
             // of an animated chart shortly after creation:
             duration: 0,
         },
+        hover: {
+            enabled: false,
+        },
         scales: {
             xAxes: [{
                 type: 'time',
@@ -146,6 +149,8 @@ var Statement = function() {
             data: [],
             pointRadius: 0,
             fill: false,
+            borderColor: assetColors[asset] || assetColors['GENERIC'],
+            backgroundColor: assetColors[asset] || assetColors['GENERIC'],
         };
         earlierPointsPresent && dataset.data.push({ t: eventTime - 1, y: 0 });
         datasets.push(dataset);

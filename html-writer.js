@@ -52,6 +52,15 @@ class HtmlWriter {
         this.file.write(prelude);
 
         this.file.write('<script>assetPrecisions = ' + JSON.stringify(assetPrecisionTable) + ';</script>\r\n');
+
+        const assetManifestJson = await getDependencySource('cryptocurrency-icons/manifest.json');
+        const assetManifest = JSON.parse(assetManifestJson);
+        const assetColors = {};
+        for (let i = 0; i < assetManifest.length; i++) {
+            assetColors[assetManifest[i].symbol] = assetManifest[i].color;
+        }
+
+        this.file.write('<script>assetColors = ' + JSON.stringify(assetColors) + ';</script>\r\n');
     }
 
     consumeEvent(unitOfAccount, event) {

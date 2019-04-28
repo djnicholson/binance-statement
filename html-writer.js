@@ -19,7 +19,7 @@ class HtmlWriter {
         this.file = fs.createWriteStream(outputFile);
     }
 
-    async begin() {
+    async begin(assetPrecisionTable) {
 
         const templateFile = path.join(__dirname, 'template.html');
         const templateContents = await readFileContents(templateFile);
@@ -46,6 +46,8 @@ class HtmlWriter {
             .replace('<!--inject(rendererCode)-->', '<script>' + rendererCode + '</script>');
 
         this.file.write(prelude);
+
+        this.file.write('<script>assetPrecisions = ' + JSON.stringify(assetPrecisionTable) + ';</script>\r\n');
     }
 
     consumeEvent(unitOfAccount, event) {
@@ -53,9 +55,7 @@ class HtmlWriter {
     }
 
     end() {
-        this.file.write('<script>');
-        this.file.write('statement.loadingComplete();\r\n');
-        this.file.write('</script>');
+        this.file.write('<script>statement.loadingComplete();</script>\r\n');
         this.epilogue && this.file.write(this.epilogue);
         this.file.end();
     }

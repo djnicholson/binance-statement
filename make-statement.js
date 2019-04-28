@@ -110,6 +110,41 @@ const takeBalanceSnapshot = async(binance, db, speed) => {
     await db.logBalanceSnapshot(asOf, recordTimestamp, accountInfo.balances);
 };
 
+const makePrecisoinTable = async(binance) => {
+    const exchangeInfo = await binance.exchangeInfo();
+    const result = { asQuantity: {}, asPrice: {} };
+    for (let i = 0; i < exchangeInfo.symbols.length; i++) {
+        const market = exchangeInfo.symbols[i];
+        const baseAsset = market.baseAsset.toUpperCase();
+        const quoteAsset = market.quoteAsset.toUpperCase();
+        for (let j = 0; j < market.filters.length; j++) {
+            const filter = market.filters[j];
+            let x, table, asset = undefined;
+            if (filter.filterType === 'LOT_SIZE') {
+                x = filter.stepSize;
+                table = result.asQuantity;
+                asset = baseAsset;
+            } else if (filter.filterType === 'PRICE_FILTER') {
+                x = filter.tickSize;
+                table = result.asPrice;
+                asset = quoteAsset
+            }
+
+            if (asset) {
+                let precision = 0;
+                while (x != Math.round(x)) {
+                    precision++;
+                    x = x * 10;
+                }
+
+                table[asset] = Math.max(table[asset] || 0, precision);
+            }
+        }
+    }
+
+    return result;
+};
+
 const logInterval = 2 * 1000;
 
 let lastLogEmission = 0;
@@ -161,7 +196,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
 
         const htmlWriter = new HtmlWriter(outputFile);
         try {
-            await htmlWriter.begin();
+            await htmlWriter.begin(await makePrecisoinTable(binance));
             for (let i = 0; i < unitsOfAccount.length; i++) {
                 const unitOfAccount = unitsOfAccount[i];
                 const aggregator = new Aggregator(db, priceCache, unitOfAccount, /*valuationIntervalInMinutes*/ 60 * 6);

@@ -7,6 +7,18 @@ var Statement = function() {
 
     this.isLoading = true;
 
+    var quantityString = function(quantity, asset) {
+        var precision = assetPrecisions.asQuantity[asset]; // assetPrecisions is an injected global variable
+        (precision === undefined) && (precision = 8);
+        return parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
+    };
+
+    var priceString = function(quantity, asset) {
+        var precision = assetPrecisions.asPrice[asset]; // assetPrecisions is an injected global variable
+        (precision === undefined) && (precision = 8);
+        return parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
+    };
+
     var switchUnit = function(unitOfAccount) {
         $('.bs-statement').hide();
         statementPages[unitOfAccount].show();
@@ -79,8 +91,9 @@ var Statement = function() {
     var populateMainRow = function(row, event, eventDate) {
         row.find('.bs-date').text(eventDate.toString());
         row.find('.bs-activity').text(activityDescriptions[event.eventType]);
-        row.find('.bs-asset').text(event.asset || event.baseAsset);
-        row.find('.bs-amount').text(event.amount || event.quantity);
+        row.find('.bs-amount').text(quantityString(event.amount || event.quantity, event.asset || event.baseAsset));
+        event.asset && row.find('.bs-amount').text(priceString(event.amount, event.asset));
+        event.baseAsset && row.find('.bs-amount').text(quantityString(event.quantity, event.baseAsset));
     }
 
     var renderEvent = function(unitOfAccount, event) {

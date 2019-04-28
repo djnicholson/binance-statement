@@ -6,6 +6,11 @@ var Statement = function() {
     var rendererPointers = {};
     var dateFormatter = new Intl.DateTimeFormat('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
     var monthChartOptions = {
+        animation: {
+            // Chart.js has a bug where exceptions are thrown if you mutate a dataset
+            // of an animated chart shortly after creation:
+            duration: 0,
+        },
         scales: {
             yAxes: [{
                 stacked: true
@@ -171,7 +176,7 @@ var Statement = function() {
         addValuationToChart(event.utcTimestamp, event.valuationComposition, monthElements.chart);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthElements.table;
-            var row = $('#bs-activity-row-template').clone();
+            var row = $('#bs-activity-row-template').clone().removeAttr('id');
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
         }

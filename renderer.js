@@ -3,6 +3,9 @@ var Statement = function() {
     var statementPages = {};
     var anyStatementPages = false;
     var activeMonth = null;
+    var rendererPointers = {};
+    var dateFormatter = new Intl.DateTimeFormat(
+        'default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
 
     this.allEvents = {};
     this.isLoading = true;
@@ -94,7 +97,7 @@ var Statement = function() {
     };
 
     var populateMainRow = function(row, event, eventDate, unitOfAccount) {
-        row.find('.bs-date').text(eventDate.toLocaleString('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', }));
+        row.find('.bs-date').text(dateFormatter.format(eventDate));
         row.find('.bs-action .bs-activity').text(activityDescriptions[event.eventType]);
         event.asset && row.find('.bs-action .bs-amount').text(priceString(event.amount, event.asset));
         event.baseAsset && row.find('.bs-action .bs-amount').text(quantityString(event.quantity, event.baseAsset));
@@ -117,17 +120,18 @@ var Statement = function() {
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
         }
-
-        event.rendered = true;
     };
 
     this.renderNewEvents = function() {
         for (var unitOfAccount in this.allEvents) {
             var events = this.allEvents[unitOfAccount];
-            for (var i = 0; i < events.length; i++) {
-                var event = events[i];
-                event.rendered || renderEvent(unitOfAccount, event);
+            var pointer = rendererPointers[unitOfAccount] || 0;
+            while (pointer < events.length) {
+                renderEvent(unitOfAccount, events[pointer]);
+                pointer++;
             }
+
+            rendererPointers[unitOfAccount] = pointer;
         }
     };
 
@@ -138,13 +142,14 @@ var Statement = function() {
 
     this.loadingComplete = function() {
         this.isLoading = false;
+        this.renderNewEvents();
     };
-
 };
 
 var statement = new Statement();
 
-var RENDER_INTERVAL = 100;
+var RENDER_INTERVAL = 1500;
+var FIRST_RENDER = 500;
 
 var onTimer = function() {
     statement.renderNewEvents();
@@ -153,4 +158,4 @@ var onTimer = function() {
     }
 };
 
-setTimeout(onTimer, RENDER_INTERVAL);
+setTimeout(onTimer, FIRST_RENDER);

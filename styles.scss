@@ -58,6 +58,7 @@ table {
 .bs-month-page table {
     @extend .table-hover;
     @extend .table-sm;
+    @extend .table-borderless;
     .bs-action,
     .bs-sub-action {
         @extend .text-center;

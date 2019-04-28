@@ -178,9 +178,15 @@ const handleDeposit = async(enumerationState, record) => {
 
     await addLot(enumerationState, record.Asset, record.Amount, record.Asset, record.Amount, 'Deposited', record.UtcTimestamp);
 
+    const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
+        record.UtcTimestamp,
+        record.Asset,
+        enumerationState.aggregator.unitOfAccount);
+
     const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_DEPOSIT);
     event.asset = record.Asset;
     event.amount = new BigNumber(record.Amount);
+    event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
     await appendPortfolioValuationAndEmit(enumerationState, event);
 };
 
@@ -193,9 +199,15 @@ const handleWithdrawal = async(enumerationState, record) => {
 
     adjustBalance(enumerationState, record.Asset, new BigNumber(-1).multipliedBy(record.Amount));
 
+    const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
+        record.UtcTimestamp,
+        record.Asset,
+        enumerationState.aggregator.unitOfAccount);
+
     const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_WITHDRAWAL);
     event.asset = record.Asset;
     event.amount = new BigNumber(record.Amount);
+    event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
     event.lots = matchLots(enumerationState, record.Asset, record.Amount);
     await appendPortfolioValuationAndEmit(enumerationState, event);
 };
@@ -210,6 +222,11 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
 
         adjustBalance(enumerationState, record.Asset, adjustment);
 
+        const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
+            record.UtcTimestamp,
+            record.Asset,
+            enumerationState.aggregator.unitOfAccount);
+
         if (adjustment.isGreaterThan(0.0)) {
 
             await addLot(enumerationState, record.Asset, adjustment, record.Asset, 0, 'Credited by Binance', record.UtcTimestamp);
@@ -217,6 +234,7 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
             const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_CREDIT);
             event.asset = record.Asset;
             event.amount = adjustment;
+            event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
             await appendPortfolioValuationAndEmit(enumerationState, event);
 
         } else {
@@ -224,6 +242,7 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
             const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_DEBIT);
             event.asset = record.Asset;
             event.amount = adjustment.multipliedBy(-1);
+            event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
             event.lots = matchLots(enumerationState, record.Asset, adjustment.multipliedBy(-1));
             await appendPortfolioValuationAndEmit(enumerationState, event);
 

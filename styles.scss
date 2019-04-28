@@ -49,17 +49,17 @@ ul.bs-month-selector {
 
 table {
     @extend .table;
+    td {
+        @extend .align-middle;
+    }
 }
 
 .bs-month-page table {
     @extend .table-hover;
     @extend .table-sm;
-    .bs-date {
-        @extend .align-middle;
-    }
     .bs-action,
     .bs-sub-action {
-        @extend .text-right;
+        @extend .text-center;
     }
     .bs-sub-action {
         @extend .small;
@@ -68,5 +68,11 @@ table {
     .bs-amount {
         @extend .text-monospace;
         @extend .text-info;
+    }
+    .bs-value {
+        @extend .text-right;
+        @extend .text-primary;
+        font-size: 1.1em;
+        font-weight: bold;
     }
 }

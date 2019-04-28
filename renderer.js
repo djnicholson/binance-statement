@@ -1,22 +1,22 @@
 var Statement = function() {
 
-    var allEvents = {};
     var statementPages = {};
     var anyStatementPages = false;
     var activeMonth = null;
 
+    this.allEvents = {};
     this.isLoading = true;
 
     var quantityString = function(quantity, asset) {
         var precision = assetPrecisions.asQuantity[asset]; // assetPrecisions is an injected global variable
         (precision === undefined) && (precision = 8);
-        return parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
+        return isNaN(parseFloat(quantity)) ? '' : parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
     };
 
     var priceString = function(quantity, asset) {
         var precision = assetPrecisions.asPrice[asset]; // assetPrecisions is an injected global variable
         (precision === undefined) && (precision = 8);
-        return parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
+        return isNaN(parseFloat(quantity)) ? '' : parseFloat(quantity).toFixed(precision) + ' ' + asset.toUpperCase();
     };
 
     var switchUnit = function(unitOfAccount) {
@@ -93,11 +93,12 @@ var Statement = function() {
         'EVENT_TYPE_SELL_AGGREGATION': 'for',
     };
 
-    var populateMainRow = function(row, event, eventDate) {
+    var populateMainRow = function(row, event, eventDate, unitOfAccount) {
         row.find('.bs-date').text(eventDate.toLocaleString('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', }));
         row.find('.bs-action .bs-activity').text(activityDescriptions[event.eventType]);
         event.asset && row.find('.bs-action .bs-amount').text(priceString(event.amount, event.asset));
         event.baseAsset && row.find('.bs-action .bs-amount').text(quantityString(event.quantity, event.baseAsset));
+        row.find('.bs-value').text(priceString(event.value, unitOfAccount));
         if (event.eventType.indexOf('_AGGREGATION') !== -1) {
             row.find('.bs-sub-action .bs-activity').text(activitySubDescriptions[event.eventType]);
             row.find('.bs-sub-action .bs-amount').text(priceString(event.price * event.quantity, event.quoteAsset));
@@ -113,7 +114,7 @@ var Statement = function() {
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthPage.find('tbody');
             var row = $($('#bs-activity-row-template').html());
-            populateMainRow(row, event, eventDate);
+            populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
         }
 
@@ -121,8 +122,8 @@ var Statement = function() {
     };
 
     this.renderNewEvents = function() {
-        for (var unitOfAccount in allEvents) {
-            var events = allEvents[unitOfAccount];
+        for (var unitOfAccount in this.allEvents) {
+            var events = this.allEvents[unitOfAccount];
             for (var i = 0; i < events.length; i++) {
                 var event = events[i];
                 event.rendered || renderEvent(unitOfAccount, event);
@@ -131,8 +132,8 @@ var Statement = function() {
     };
 
     this.pushEvent = function(unitOfAccount, event) {
-        allEvents[unitOfAccount] = allEvents[unitOfAccount] || [];
-        allEvents[unitOfAccount].push(event);
+        this.allEvents[unitOfAccount] = this.allEvents[unitOfAccount] || [];
+        this.allEvents[unitOfAccount].push(event);
     };
 
     this.loadingComplete = function() {
@@ -143,8 +144,7 @@ var Statement = function() {
 
 var statement = new Statement();
 
-var RENDER_INTERVAL = 1500;
-var FIRST_RENDER = 500;
+var RENDER_INTERVAL = 100;
 
 var onTimer = function() {
     statement.renderNewEvents();
@@ -153,4 +153,4 @@ var onTimer = function() {
     }
 };
 
-setTimeout(onTimer, FIRST_RENDER);
+setTimeout(onTimer, RENDER_INTERVAL);

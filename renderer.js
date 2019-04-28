@@ -4,8 +4,20 @@ var Statement = function() {
     var anyStatementPages = false;
     var activeMonth = null;
     var rendererPointers = {};
-    var dateFormatter = new Intl.DateTimeFormat(
-        'default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
+    var dateFormatter = new Intl.DateTimeFormat('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
+    var monthChartOptions = {
+        scales: {
+            yAxes: [{
+                stacked: true
+            }],
+            xAxes: [{
+                type: 'time',
+                time: {
+                    unit: 'day'
+                }
+            }]
+        }
+    };
 
     this.allEvents = {};
     this.isLoading = true;
@@ -59,7 +71,7 @@ var Statement = function() {
         return statementPages[unitOfAccount];
     };
 
-    var getTableForMonth = function(statementPage, eventDate) {
+    var getElementsForMonth = function(statementPage, eventDate) {
         var year = eventDate.getFullYear();
         var month = eventDate.getMonth() + 1;
         var pageId = year + '-' + month;
@@ -67,6 +79,12 @@ var Statement = function() {
             var monthName = eventDate.toLocaleString('default', { month: 'long' });
             var monthNameShort = eventDate.toLocaleString('default', { month: 'short' });
             var pageArea = $($('#bs-month-page-template').html());
+            var chartArea = pageArea.find('.bs-month-chart');
+            var chart = new Chart(chartArea.find('canvas'), {
+                type: 'line',
+                data: { datasets: [] },
+                options: monthChartOptions,
+            });
             pageArea.find('.bs-title').text(monthName + ' ' + year);
             statementPage.find('.bs-month-pages').append(pageArea);
             !statementPage.anyMonthPages || pageArea.hide();
@@ -77,10 +95,10 @@ var Statement = function() {
             !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
             statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
-            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody') };
+            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody'), chart: chart };
         }
 
-        return statementPage.monthPages[pageId].table;
+        return statementPage.monthPages[pageId];
     };
 
     var activityDescriptions = {
@@ -111,11 +129,48 @@ var Statement = function() {
         }
     }
 
+    var findDataSetForAsset = function(eventTime, datasets, asset) {
+        var earlierPointsPresent = false;
+        for (var i = 0; i < datasets.length; i++) {
+            var dataset = datasets[i];
+            earlierPointsPresent = earlierPointsPresent || (dataset.data.length > 1);
+            if (dataset.label === asset) {
+                return dataset;
+            }
+        }
+
+        var dataset = {
+            label: asset,
+            data: [],
+            pointRadius: 0,
+            fill: true,
+        };
+        earlierPointsPresent && dataset.data.push({ t: eventTime - 1, y: 0 });
+        datasets.push(dataset);
+        return dataset;
+    }
+
+    var addValuationToChart = function(eventTime, valuationComposition, chart) {
+        for (var asset in valuationComposition) {
+            var valuation = valuationComposition[asset];
+            findDataSetForAsset(eventTime, chart.data.datasets, asset).data.push({ t: eventTime, y: valuation });
+        }
+
+        for (var i = 0; i < chart.data.datasets.length; i++) {
+            var dataset = chart.data.datasets[i];
+            if (!valuationComposition[dataset.label]) {
+                dataset.data.push({ t: eventTime, y: 0 });
+            }
+        }
+    };
+
     var renderEvent = function(unitOfAccount, event) {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
+        var monthElements = getElementsForMonth(statementPage, eventDate);
+        addValuationToChart(event.utcTimestamp, event.valuationComposition, monthElements.chart);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
-            var tableBody = getTableForMonth(statementPage, eventDate);
+            var tableBody = monthElements.table;
             var row = $('#bs-activity-row-template').clone();
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
@@ -132,6 +187,10 @@ var Statement = function() {
             }
 
             rendererPointers[unitOfAccount] = pointer;
+        }
+
+        for (var i = 0; i < Chart.instances.length; i++) {
+            Chart.instances[i].update();
         }
     };
 

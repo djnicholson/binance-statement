@@ -55,25 +55,27 @@ table {
     }
 }
 
-.bs-month-page table {
-    @extend .table-hover;
-    @extend .table-sm;
-    @extend .table-borderless;
-    .bs-action,
-    .bs-sub-action {
-        @extend .text-center;
-    }
-    .bs-sub-action {
-        @extend .small;
-    }
-    .bs-amount {
-        @extend .text-monospace;
-        @extend .text-info;
-    }
-    .bs-value {
-        @extend .text-right;
-        @extend .text-primary;
-        font-size: 1.1em;
-        font-weight: bold;
+.bs-month-page {
+    table {
+        @extend .table-hover;
+        @extend .table-sm;
+        @extend .table-borderless;
+        .bs-action,
+        .bs-sub-action {
+            @extend .text-center;
+        }
+        .bs-sub-action {
+            @extend .small;
+        }
+        .bs-amount {
+            @extend .text-monospace;
+            @extend .text-info;
+        }
+        .bs-value {
+            @extend .text-right;
+            @extend .text-primary;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
     }
 }

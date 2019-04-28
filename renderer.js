@@ -33,7 +33,7 @@ var Statement = function() {
         $('a.bs-month').removeClass('active');
         $('a.bs-' + activeMonth).addClass('active');
         for (var pageId in allMonthPages) {
-            allMonthPages[pageId][(pageId == activeMonth) ? 'show' : 'hide']();
+            allMonthPages[pageId].page[(pageId == activeMonth) ? 'show' : 'hide']();
         }
     };
 
@@ -77,10 +77,10 @@ var Statement = function() {
             !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
             statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
-            statementPage.monthPages[pageId] = pageArea.find('tbody');
+            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody') };
         }
 
-        return statementPage.monthPages[pageId];
+        return statementPage.monthPages[pageId].table;
     };
 
     var activityDescriptions = {
@@ -116,7 +116,7 @@ var Statement = function() {
         var eventDate = new Date(event.utcTimestamp);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = getTableForMonth(statementPage, eventDate);
-            var row = $($('#bs-activity-row-template').html());
+            var row = $('#bs-activity-row-template').clone();
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
         }

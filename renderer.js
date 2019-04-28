@@ -59,17 +59,17 @@ var Statement = function() {
         return statementPages[unitOfAccount];
     };
 
-    var getPageForMonth = function(statementPage, eventDate) {
+    var getTableForMonth = function(statementPage, eventDate) {
         var year = eventDate.getFullYear();
         var month = eventDate.getMonth() + 1;
         var pageId = year + '-' + month;
         if (!statementPage.monthPages[pageId]) {
             var monthName = eventDate.toLocaleString('default', { month: 'long' });
             var monthNameShort = eventDate.toLocaleString('default', { month: 'short' });
-            statementPage.monthPages[pageId] = $($('#bs-month-page-template').html());
-            statementPage.monthPages[pageId].find('.bs-title').text(monthName + ' ' + year);
-            statementPage.find('.bs-month-pages').append(statementPage.monthPages[pageId]);
-            !statementPage.anyMonthPages || statementPage.monthPages[pageId].hide();
+            var pageArea = $($('#bs-month-page-template').html());
+            pageArea.find('.bs-title').text(monthName + ' ' + year);
+            statementPage.find('.bs-month-pages').append(pageArea);
+            !statementPage.anyMonthPages || pageArea.hide();
             var switcherLink = $($('#bs-month-switch-template').html());
             switcherLink.find('a').addClass('bs-month bs-' + pageId).text(monthNameShort + ' ' + year).click(() => {
                 switchMonth(statementPage.monthPages, pageId);
@@ -77,6 +77,7 @@ var Statement = function() {
             !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
             statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
+            statementPage.monthPages[pageId] = pageArea.find('tbody');
         }
 
         return statementPage.monthPages[pageId];
@@ -113,9 +114,8 @@ var Statement = function() {
     var renderEvent = function(unitOfAccount, event) {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
-        var monthPage = getPageForMonth(statementPage, eventDate);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
-            var tableBody = monthPage.find('tbody');
+            var tableBody = getTableForMonth(statementPage, eventDate);
             var row = $($('#bs-activity-row-template').html());
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);

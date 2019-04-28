@@ -148,8 +148,7 @@ var Statement = function() {
 
 var statement = new Statement();
 
-var RENDER_INTERVAL = 1500;
-var FIRST_RENDER = 500;
+var RENDER_INTERVAL = 500;
 
 var onTimer = function() {
     statement.renderNewEvents();
@@ -158,4 +157,4 @@ var onTimer = function() {
     }
 };
 
-setTimeout(onTimer, FIRST_RENDER);
+setTimeout(onTimer, RENDER_INTERVAL);

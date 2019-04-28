@@ -145,7 +145,7 @@ var Statement = function() {
             label: asset,
             data: [],
             pointRadius: 0,
-            fill: true,
+            fill: false,
         };
         earlierPointsPresent && dataset.data.push({ t: eventTime - 1, y: 0 });
         datasets.push(dataset);

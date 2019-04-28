@@ -90,11 +90,11 @@ var Statement = function() {
 
     var activitySubDescriptions = {
         'EVENT_TYPE_BUY_AGGREGATION': 'using',
-        'EVENT_TYPE_SELL_AGGREGATION': 'sold',
+        'EVENT_TYPE_SELL_AGGREGATION': 'for',
     };
 
     var populateMainRow = function(row, event, eventDate) {
-        row.find('.bs-date').text(eventDate.toString());
+        row.find('.bs-date').text(eventDate.toLocaleString('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', }));
         row.find('.bs-action .bs-activity').text(activityDescriptions[event.eventType]);
         event.asset && row.find('.bs-action .bs-amount').text(priceString(event.amount, event.asset));
         event.baseAsset && row.find('.bs-action .bs-amount').text(quantityString(event.quantity, event.baseAsset));

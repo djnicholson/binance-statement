@@ -1,3 +1,8 @@
+$primary: #4E4CBA;
+$secondary: #72A8AF;
+$light: #E9E4DB;
+$info: #1C1C28;
+$warning: #4584E3;
 @import "node_modules/bootstrap/scss/bootstrap";
 body {
     @extend .container-fluid;
@@ -39,6 +44,7 @@ ul.bs-month-selector {
 
 .bs-title {
     @extend .h4;
+    @extend .text-primary;
 }
 
 table {
@@ -48,4 +54,19 @@ table {
 .bs-month-page table {
     @extend .table-hover;
     @extend .table-sm;
+    .bs-date {
+        @extend .align-middle;
+    }
+    .bs-action,
+    .bs-sub-action {
+        @extend .text-right;
+    }
+    .bs-sub-action {
+        @extend .small;
+        @extend .font-italic;
+    }
+    .bs-amount {
+        @extend .text-monospace;
+        @extend .text-info;
+    }
 }

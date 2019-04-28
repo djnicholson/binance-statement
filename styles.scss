@@ -56,11 +56,13 @@ table {
 }
 
 .bs-month-page {
+    .bs-month-chart {
+        @extend .mb-3;
+    }
     table {
         @extend .table-hover;
         @extend .table-sm;
         @extend .table-borderless;
-        @extend .pt-3;
         .bs-action,
         .bs-sub-action {
             @extend .text-center;

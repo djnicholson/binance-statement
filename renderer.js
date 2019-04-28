@@ -19,9 +19,6 @@ var Statement = function() {
                 }
             }]
         },
-        tooltips: {
-            mode: 'x',
-        }
     };
 
     this.allEvents = {};

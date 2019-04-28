@@ -45,7 +45,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th colspan="2">Activity</th>
+                        <th>Activity</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,8 +57,16 @@
     <script id="bs-activity-row-template" type="text/x-template">
         <tr>
             <td class='bs-date'></td>
-            <td class='bs-activity'></td>
-            <td class='bs-amount'></td>
+            <td>
+                <div class='bs-action'>
+                    <span class="bs-activity"></span>
+                    <span class="bs-amount"></span>
+                </div>
+                <div class='bs-sub-action'>
+                    <span class="bs-activity"></span>
+                    <span class="bs-amount"></span>
+                </div>
+            </td>
         </tr>
     </script>
 

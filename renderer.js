@@ -88,12 +88,22 @@ var Statement = function() {
         'EVENT_TYPE_BINANCE_DEBIT': 'Account debited',
     };
 
+    var activitySubDescriptions = {
+        'EVENT_TYPE_BUY_AGGREGATION': 'using',
+        'EVENT_TYPE_SELL_AGGREGATION': 'sold',
+    };
+
     var populateMainRow = function(row, event, eventDate) {
         row.find('.bs-date').text(eventDate.toString());
-        row.find('.bs-activity').text(activityDescriptions[event.eventType]);
-        row.find('.bs-amount').text(quantityString(event.amount || event.quantity, event.asset || event.baseAsset));
-        event.asset && row.find('.bs-amount').text(priceString(event.amount, event.asset));
-        event.baseAsset && row.find('.bs-amount').text(quantityString(event.quantity, event.baseAsset));
+        row.find('.bs-action .bs-activity').text(activityDescriptions[event.eventType]);
+        event.asset && row.find('.bs-action .bs-amount').text(priceString(event.amount, event.asset));
+        event.baseAsset && row.find('.bs-action .bs-amount').text(quantityString(event.quantity, event.baseAsset));
+        if (event.eventType.indexOf('_AGGREGATION') !== -1) {
+            row.find('.bs-sub-action .bs-activity').text(activitySubDescriptions[event.eventType]);
+            row.find('.bs-sub-action .bs-amount').text(priceString(event.price * event.quantity, event.quoteAsset));
+        } else {
+            row.find('.bs-sub-action').hide();
+        }
     }
 
     var renderEvent = function(unitOfAccount, event) {

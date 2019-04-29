@@ -132,7 +132,7 @@ var Statement = function() {
             name: asset,
             x: [],
             y: [],
-            type: 'scatter',
+            stackgroup: 'one',
         };
 
         datasets.push(dataset);

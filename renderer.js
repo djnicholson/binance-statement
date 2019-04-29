@@ -7,10 +7,23 @@ var Statement = function() {
     var allCharts = [];
     var dateFormatter = new Intl.DateTimeFormat('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
     var monthChartLayout = {
-
+        // margins:
+        l: 0,
+        r: 0,
+        t: 0,
+        b: 0,
+        // animation:
+        transition: { duration: 0 },
+        // interactivity:
+        clickmode: 'none',
+        dragmode: 'none',
+        xaxis: { type: 'date', tickformat: '%B %e', },
+        yaxis: { visible: true, },
+        grid: { yside: 'right plot' }, // not working?
     };
     var monthChartOptions = {
         responsive: true,
+        displayModeBar: false,
     };
 
     this.allEvents = {};

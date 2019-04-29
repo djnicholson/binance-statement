@@ -133,6 +133,9 @@ var Statement = function() {
             x: [],
             y: [],
             stackgroup: 'one',
+            line: {
+                color: assetColors[asset.toUpperCase()] || assetColors['GENERIC'],
+            },
         };
 
         datasets.push(dataset);

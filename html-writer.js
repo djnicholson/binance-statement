@@ -37,17 +37,15 @@ class HtmlWriter {
         const jqueryJs = await getDependencySource('jquery/dist/jquery.min.js');
         const popperJs = await getDependencySource('popper.js/dist/umd/popper.min.js');
         const bootstrapJs = await getDependencySource('bootstrap/dist/js/bootstrap.min.js');
-        const momentJs = await getDependencySource('moment/min/moment-with-locales.min.js');
-        const chartJs = await getDependencySource('chart.js/dist/Chart.min.js');
+        const plotlyJs = await getDependencySource('plotly.js/dist/plotly.min.js');
 
         const prelude = preludeTemplate
-            .replace('<!--inject(css)-->', '<style type="text/css">' + css + '</style>')
-            .replace('<!--inject(jqueryJs)-->', '<script>' + jqueryJs + '</script>')
-            .replace('<!--inject(popperJs)-->', '<script>' + popperJs + '</script>')
-            .replace('<!--inject(bootstrapJs)-->', '<script>' + bootstrapJs + '</script>')
-            .replace('<!--inject(momentJs)-->', '<script>' + momentJs + '</script>')
-            .replace('<!--inject(chartJs)-->', '<script>' + chartJs + '</script>')
-            .replace('<!--inject(rendererCode)-->', '<script>' + rendererCode + '</script>');
+            .replace('<!--inject(css)-->', () => '<style type="text/css">' + css + '</style>')
+            .replace('<!--inject(jqueryJs)-->', () => '<script>' + jqueryJs + '</script>')
+            .replace('<!--inject(popperJs)-->', () => '<script>' + popperJs + '</script>')
+            .replace('<!--inject(bootstrapJs)-->', () => '<script>' + bootstrapJs + '</script>')
+            .replace('<!--inject(plotlyJs)-->', () => '<script>' + plotlyJs + '</script>')
+            .replace('<!--inject(rendererCode)-->', () => '<script>' + rendererCode + '</script>');
 
         this.file.write(prelude);
 

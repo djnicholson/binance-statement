@@ -4,24 +4,13 @@ var Statement = function() {
     var anyStatementPages = false;
     var activeMonth = null;
     var rendererPointers = {};
+    var allCharts = [];
     var dateFormatter = new Intl.DateTimeFormat('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
+    var monthChartLayout = {
+
+    };
     var monthChartOptions = {
-        animation: {
-            // Chart.js has a bug where exceptions are thrown if you mutate a dataset
-            // of an animated chart shortly after creation:
-            duration: 0,
-        },
-        hover: {
-            enabled: false,
-        },
-        scales: {
-            xAxes: [{
-                type: 'time',
-                time: {
-                    unit: 'day',
-                }
-            }]
-        },
+        responsive: true,
     };
 
     this.allEvents = {};
@@ -85,11 +74,8 @@ var Statement = function() {
             var monthNameShort = eventDate.toLocaleString('default', { month: 'short' });
             var pageArea = $($('#bs-month-page-template').html());
             var chartArea = pageArea.find('.bs-month-chart');
-            var chart = new Chart(chartArea.find('canvas'), {
-                type: 'line',
-                data: { datasets: [] },
-                options: monthChartOptions,
-            });
+            var chartData = [];
+            allCharts.push({ chartArea: chartArea, chartData: chartData, plotted: false });
             pageArea.find('.bs-title').text(monthName + ' ' + year);
             statementPage.find('.bs-month-pages').append(pageArea);
             !statementPage.anyMonthPages || pageArea.hide();
@@ -100,7 +86,7 @@ var Statement = function() {
             !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
             statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
-            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody'), chart: chart };
+            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody'), chartData: chartData };
         }
 
         return statementPage.monthPages[pageId];
@@ -134,40 +120,31 @@ var Statement = function() {
         }
     }
 
-    var findDataSetForAsset = function(eventTime, datasets, asset) {
-        var earlierPointsPresent = false;
+    var findTraceForAsset = function(datasets, asset) {
         for (var i = 0; i < datasets.length; i++) {
             var dataset = datasets[i];
-            earlierPointsPresent = earlierPointsPresent || (dataset.data.length > 1);
-            if (dataset.label === asset) {
+            if (dataset.name === asset) {
                 return dataset;
             }
         }
 
         var dataset = {
-            label: asset,
-            data: [],
-            pointRadius: 0,
-            fill: false,
-            borderColor: assetColors[asset] || assetColors['GENERIC'],
-            backgroundColor: assetColors[asset] || assetColors['GENERIC'],
+            name: asset,
+            x: [],
+            y: [],
+            type: 'scatter',
         };
-        earlierPointsPresent && dataset.data.push({ t: eventTime - 1, y: 0 });
+
         datasets.push(dataset);
         return dataset;
     }
 
-    var addValuationToChart = function(eventTime, valuationComposition, chart) {
+    var addValuationToChart = function(eventTime, valuationComposition, chartData) {
         for (var asset in valuationComposition) {
             var valuation = valuationComposition[asset];
-            findDataSetForAsset(eventTime, chart.data.datasets, asset).data.push({ t: eventTime, y: valuation });
-        }
-
-        for (var i = 0; i < chart.data.datasets.length; i++) {
-            var dataset = chart.data.datasets[i];
-            if (!valuationComposition[dataset.label]) {
-                dataset.data.push({ t: eventTime, y: 0 });
-            }
+            var trace = findTraceForAsset(chartData, asset);
+            trace.x.push(eventTime);
+            trace.y.push(valuation);
         }
     };
 
@@ -175,7 +152,7 @@ var Statement = function() {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
         var monthElements = getElementsForMonth(statementPage, eventDate);
-        addValuationToChart(event.utcTimestamp, event.valuationComposition, monthElements.chart);
+        addValuationToChart(event.utcTimestamp, event.valuationComposition, monthElements.chartData);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthElements.table;
             var row = $('#bs-activity-row-template').clone().removeAttr('id');
@@ -196,8 +173,12 @@ var Statement = function() {
             rendererPointers[unitOfAccount] = pointer;
         }
 
-        for (var i = 0; i < Chart.instances.length; i++) {
-            Chart.instances[i].update();
+        for (var i = 0; i < allCharts.length; i++) {
+            if (allCharts[i].plotted) {
+                Plotly.restyle(allCharts[i].chartArea[0], allCharts[i].chartData);
+            } else {
+                Plotly.newPlot(allCharts[i].chartArea[0], allCharts[i].chartData, monthChartLayout, monthChartOptions);
+            }
         }
     };
 

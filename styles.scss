@@ -58,6 +58,8 @@ table {
 .bs-month-page {
     .bs-month-chart {
         @extend .mb-3;
+        height: 300px;
+        min-height: 300px;
     }
     table {
         @extend .table-hover;

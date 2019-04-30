@@ -100,10 +100,10 @@ table {
                     @extend .p-2;
                     .bs-content {
                         @extend .row;
-                        .bs-lot-table {
+                        .bs-table {
                             @extend .col-xl-6;
                             @extend .col-12;
-                            .bs-lot-title {
+                            .bs-table-title {
                                 font-weight: bolder;
                             }
                             table {
@@ -111,6 +111,10 @@ table {
                                 th {
                                     @extend .p-0;
                                 }
+                            }
+                        }
+                        .bs-lot-table {
+                            table {
                                 .bs-purchase-time {
                                     width: 30%;
                                 }
@@ -120,6 +124,31 @@ table {
                                 .bs-cost-basis {
                                     @extend .text-right;
                                     width: 25%;
+                                }
+                            }
+                        }
+                        .bs-commission-table {
+                            table {
+                                .bs-fill-time {
+                                    width: 20%;
+                                }
+                                .bs-fill-detail {
+                                    width: 35%;
+                                }
+                                .bs-method {
+                                    width: 15%;
+                                }
+                                .bs-commission {
+                                    @extend .text-right;
+                                    width: 15%;
+                                }
+                                .bs-value {
+                                    @extend .text-right;
+                                    width: 15%;
+                                }
+                                .bs-cost {
+                                    @extend .text-right;
+                                    width: 15%;
                                 }
                             }
                         }

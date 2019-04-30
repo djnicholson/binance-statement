@@ -133,6 +133,26 @@ var Statement = function() {
         }
     }
 
+    var renderCommissionTable = function(contentArea, event, unitOfAccount) {
+        var table = $('#bs-commission-table-template').clone().removeAttr('id');
+        contentArea.append(table);
+        var totalValue = 0.0;
+        for (var i = 0; i < event.fills.length; i++) {
+            var fill = event.fills[i];
+            totalValue += fill.commissionValue;
+            var row = $('#bs-commission-row-template').clone().removeAttr('id');
+            row.find('.bs-fill-time').text(dateFormatter.format(new Date(fill.utcTimestamp)));
+            row.find('.bs-fill-detail').text(priceString(fill.quantity, fill.baseAsset) + ' for ' + priceString(fill.quantity * fill.price, fill.quoteAsset));
+            row.find('.bs-commission').text(priceString(fill.commission, fill.commissionAsset));
+            row.find('.bs-method').text(fill.commissionDebitedFromProceeds ? 'Proceeds debit' : 'Asset liquidation');
+            row.find('.bs-value').text(priceString(fill.commissionValue, unitOfAccount));
+            table.find('tbody').append(row);
+        }
+
+        table.find('tfoot .bs-value').text(priceString(totalValue, unitOfAccount));
+        table.find('tfoot .bs-cost').text(priceString(event.commissionCost, unitOfAccount));
+    };
+
     var renderLotsTable = function(contentArea, asset, lots, unitOfAccount) {
         var table = $('#bs-lot-table-template').clone().removeAttr('id');
         contentArea.append(table);
@@ -174,6 +194,7 @@ var Statement = function() {
             return false;
         } else {
             var contentArea = row.find('.bs-content');
+            event.fills && event.fills.length && renderCommissionTable(contentArea, event, unitOfAccount);
             renderLotsTables(contentArea, event, unitOfAccount);
             return true;
         }

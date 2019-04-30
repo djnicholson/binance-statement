@@ -119,6 +119,10 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
         ((record.BaseAsset === 'BNB') && record.IsBuyer) ||
         ((record.QuoteAsset === 'BNB') && !record.IsBuyer);
     const commissionLots = commissionDebitedFromProceeds ? [] : matchLots(enumerationState, 'BNB', record.Commission);
+    let commissionCost = new BigNumber(0.0);
+    for (let i = 0; i < commissionLots.length; i++) {
+        commissionCost = commissionCost.plus(commissionLots[i].costBasisPrice.multipliedBy(commissionLots[i].quantity));
+    }
 
     let event = null;
     if (record.IsBuyer) {
@@ -158,6 +162,8 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
         record.BaseAsset,
         enumerationState.aggregator.unitOfAccount);
 
+    const commissionValue = commissionAssetPrice ? commissionAssetPrice.multipliedBy(record.Commission) : null;
+
     event.fillId = record.Id;
     event.baseAsset = record.BaseAsset;
     event.quoteAsset = record.QuoteAsset;
@@ -168,8 +174,9 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
     event.commission = new BigNumber(record.Commission);
     event.commissionAsset = record.CommissionAsset;
     event.commissionDebitedFromProceeds = !!commissionDebitedFromProceeds;
+    event.commissionCost = commissionDebitedFromProceeds ? commissionValue : commissionCost;
     event.isMaker = !!record.IsMaker;
-    event.commissionValue = commissionAssetPrice ? commissionAssetPrice.multipliedBy(record.Commission) : null;
+    event.commissionValue = commissionValue;
     event.value = baseAssetPrice ? baseAssetPrice.multipliedBy(record.Quantity) : null;
 
     await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);

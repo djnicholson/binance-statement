@@ -22,11 +22,13 @@ const emitBufferContents = async(fillBuffer, callback) => {
 
     let totalSpend = new BigNumber(0.0);
     aggregateEvent.commissionValue = new BigNumber(0.0);
+    aggregateEvent.commissionCost = new BigNumber(0.0);
     aggregateEvent.value = new BigNumber(0.0);
     aggregateEvent.quantity = new BigNumber(0.0);
     for (let i = 0; i < fillBuffer.length; i++) {
         totalSpend = totalSpend.plus(fillBuffer[i].price.multipliedBy(fillBuffer[i].quantity));
         aggregateEvent.commissionValue = aggregateEvent.commissionValue.plus(fillBuffer[i].commissionValue);
+        aggregateEvent.commissionCost = aggregateEvent.commissionCost.plus(fillBuffer[i].commissionCost);
         aggregateEvent.value = aggregateEvent.value.plus(fillBuffer[i].value);
         aggregateEvent.quantity = aggregateEvent.quantity.plus(fillBuffer[i].quantity);
     }

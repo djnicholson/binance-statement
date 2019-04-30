@@ -215,7 +215,7 @@ var Statement = function() {
                     unitOfAccount,
                     event,
                     profitLossEntries,
-                    asset == event.baseAsset ? event.value : event.commissionValue);
+                    (asset == event.baseAsset) || (asset == event.asset) ? event.value : event.commissionValue);
             }
         }
     };

@@ -149,9 +149,7 @@ var Statement = function() {
             table.find('tbody').append(row);
         }
 
-        var row = $('#bs-lot-row-template').clone().removeAttr('id');
-        row.find('.bs-cost-basis').text(priceString(totalCost, unitOfAccount));
-        table.find('tfoot').append(row);
+        table.find('tfoot .bs-cost-basis').text(priceString(totalCost, unitOfAccount));
     };
 
     var renderLotsTables = function(contentArea, event, unitOfAccount) {

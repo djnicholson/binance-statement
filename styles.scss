@@ -107,7 +107,6 @@ table {
                                 font-weight: bolder;
                             }
                             table {
-                                @extend .pl-2;
                                 table-layout: fixed;
                                 th {
                                     @extend .p-0;
@@ -116,7 +115,6 @@ table {
                                     width: 30%;
                                 }
                                 .bs-lot {
-                                    @extend .text-center;
                                     width: 45%;
                                 }
                                 .bs-cost-basis {

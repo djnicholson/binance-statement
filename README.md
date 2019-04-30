@@ -8,14 +8,20 @@ A command-line tool and an API are provided.
 
 ### Command line
 
+At a command prompt:
+
     npm install -g binance-statement
     binance-statement --help
     binance-statement --api-key "FOO" --api-key "BAR" --output-file "statement.html"
 
 ### API
 
+At a command prompt:
+
     npm install --save binance-statement
-    
+
+In a JavaScript file:
+
     const makeStatement = require('binance-statement');
     // ...
     await makeStatement(apiKey, apiSecret, startMonth, startYear, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount);

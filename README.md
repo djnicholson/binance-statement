@@ -14,7 +14,7 @@ A command-line tool and an API are provided.
 
 ### API
 
-    npm install -g binance-statement
+    npm install --save binance-statement
     
     const makeStatement = require('binance-statement');
     // ...

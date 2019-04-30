@@ -12,6 +12,8 @@ program
     .option('-s, --api-secret <secret>', 'Binance API secret')
     .option('-o, --output-file <file>', 'Output HTML file')
     .option('-d, --data-file [file]', 'Data file')
+    .option('-y, --start-year [year]', 'Start year (defaults to beginning of time)')
+    .option('-m, --start-month [month]', 'Start month (defaults to beginning of time)')
     .option('-c, --cache-file [file]', 'Price cache file (one cache can be shared between multiple Binance accounts)')
     .option('-n, --no-fills-sync', 'Skip syncing fill data from Binance (takes a long time)')
     .option('-S --speed <n>', 'A number between 1 and 10 (10 is fastest). Too fast may cause Binance throttling.', parseInt)
@@ -38,11 +40,17 @@ program
                 console.warn(colors.yellow('\nNot retriving fills from Binance; statement may be out of date.\n'));
             }
 
+            const customStartDate = options.startMonth || options.startYear;
+            const customStartMonth = options.startMonth || 1;
+            const customStartYear = options.startYear || (new Date).getFullYear();
+
             const unitsOfAccount = ['USDT', 'BTC'];
 
             await makeStatement(
                 options.apiKey,
                 options.apiSecret,
+                customStartDate ? customStartMonth : 0,
+                customStartDate ? customStartYear : 0,
                 options.outputFile,
                 options.dataFile || (options.apiKey + ".db"),
                 options.cacheFile || "price_cache.db",

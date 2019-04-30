@@ -183,7 +183,7 @@ const logEvent = event => {
     lastLogEmission = utcNow;
 };
 
-const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount) => {
+const main = async(apiKey, apiSecret, startMonth, startYear, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount) => {
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
@@ -199,7 +199,7 @@ const main = async(apiKey, apiSecret, outputFile, dataFile, cacheFile, syncFills
             await htmlWriter.begin(await makePrecisoinTable(binance));
             for (let i = 0; i < unitsOfAccount.length; i++) {
                 const unitOfAccount = unitsOfAccount[i];
-                const aggregator = new Aggregator(db, priceCache, unitOfAccount, /*valuationIntervalInMinutes*/ 60 * 6);
+                const aggregator = new Aggregator(db, priceCache, unitOfAccount, startMonth, startYear, /*valuationIntervalInMinutes*/ 60 * 6);
                 const fillCombiner = new FillCombiner(aggregator);
                 await fillCombiner.enumerateEvents(event => {
                     logEvent(event);

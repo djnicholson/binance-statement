@@ -9,7 +9,13 @@ class Event {
     }
 }
 
-const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
+const appendPortfolioValuationAndEmit = async(enumerationState, event, startMonth, startYear) => {
+    const eventDate = new Date(event.utcTimestamp);
+    if ((eventDate.getFullYear() < startYear) ||
+        ((eventDate.getFullYear() == startYear) && ((eventDate.getMonth() + 1) < startMonth))) {
+        return;
+    }
+
     event.totalPortfolioValue = new BigNumber(0.0);
     event.valuationComposition = {};
     for (let asset in enumerationState.balances) {
@@ -40,14 +46,16 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event) => {
     enumerationState.lastEventTimestamp = event.utcTimestamp;
 };
 
-const emitSnapshotsUpUntil = async(enumerationState, utcTimestamp) => {
+const emitSnapshotsUpUntil = async(enumerationState, utcTimestamp, startMonth, startYear) => {
     if (enumerationState.lastEventTimestamp > 0) {
         while ((enumerationState.lastEventTimestamp + (enumerationState.aggregator.valuationIntervalInMinutes * 60 * 1000)) < utcTimestamp) {
             await appendPortfolioValuationAndEmit(
                 enumerationState,
                 new Event(
                     enumerationState.lastEventTimestamp + (enumerationState.aggregator.valuationIntervalInMinutes * 60 * 1000),
-                    Aggregator.EVENT_TYPE_SNAPSHOT));
+                    Aggregator.EVENT_TYPE_SNAPSHOT),
+                startMonth,
+                startYear);
         }
     }
 };
@@ -101,7 +109,7 @@ const matchLots = (enumerationState, asset, amount) => {
     return result;
 };
 
-const handleFill = async(enumerationState, record) => {
+const handleFill = async(enumerationState, record, startMonth, startYear) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
     adjustBalance(enumerationState, record.CommissionAsset, new BigNumber(record.Commission).multipliedBy(-1));
@@ -164,10 +172,10 @@ const handleFill = async(enumerationState, record) => {
     event.commissionValue = commissionAssetPrice ? commissionAssetPrice.multipliedBy(record.Commission) : null;
     event.value = baseAssetPrice ? baseAssetPrice.multipliedBy(record.Quantity) : null;
 
-    await appendPortfolioValuationAndEmit(enumerationState, event);
+    await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 };
 
-const handleDeposit = async(enumerationState, record) => {
+const handleDeposit = async(enumerationState, record, startMonth, startYear) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
     if (record.Status == 0) {
@@ -187,10 +195,10 @@ const handleDeposit = async(enumerationState, record) => {
     event.asset = record.Asset;
     event.amount = new BigNumber(record.Amount);
     event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
-    await appendPortfolioValuationAndEmit(enumerationState, event);
+    await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 };
 
-const handleWithdrawal = async(enumerationState, record) => {
+const handleWithdrawal = async(enumerationState, record, startMonth, startYear) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
     if (record.Status != 6) {
@@ -209,10 +217,10 @@ const handleWithdrawal = async(enumerationState, record) => {
     event.amount = new BigNumber(record.Amount);
     event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
     event.lots = matchLots(enumerationState, record.Asset, record.Amount);
-    await appendPortfolioValuationAndEmit(enumerationState, event);
+    await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 };
 
-const handleBalanceCheckpoint = async(enumerationState, record) => {
+const handleBalanceCheckpoint = async(enumerationState, record, startMonth, startYear) => {
     await emitSnapshotsUpUntil(enumerationState, record.UtcTimestamp);
 
     const expectedBalance = enumerationState.balances[record.Asset] || new BigNumber(0.0);
@@ -235,7 +243,7 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
             event.asset = record.Asset;
             event.amount = adjustment;
             event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
-            await appendPortfolioValuationAndEmit(enumerationState, event);
+            await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 
         } else {
 
@@ -244,7 +252,7 @@ const handleBalanceCheckpoint = async(enumerationState, record) => {
             event.amount = adjustment.multipliedBy(-1);
             event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
             event.lots = matchLots(enumerationState, record.Asset, adjustment.multipliedBy(-1));
-            await appendPortfolioValuationAndEmit(enumerationState, event);
+            await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 
         }
     }
@@ -254,10 +262,12 @@ class Aggregator {
 
     static get Event() { return Event; }
 
-    constructor(db, priceCache, unitOfAccount, valuationIntervalInMinutes) {
+    constructor(db, priceCache, unitOfAccount, startMonth, startYear, valuationIntervalInMinutes) {
         this.db = db;
         this.priceCache = priceCache;
         this.unitOfAccount = unitOfAccount;
+        this.startMonth = startMonth;
+        this.startYear = startYear;
         this.valuationIntervalInMinutes = valuationIntervalInMinutes;
     }
 
@@ -284,16 +294,16 @@ class Aggregator {
         await this.db.forEachRecord(async record => {
             switch (record.RecordType) {
                 case Database.RECORD_TYPE_FILL:
-                    await handleFill(enumerationState, record);
+                    await handleFill(enumerationState, record, this.startMonth, this.startYear);
                     break;
                 case Database.RECORD_TYPE_DEPOSIT:
-                    await handleDeposit(enumerationState, record);
+                    await handleDeposit(enumerationState, record, this.startMonth, this.startYear);
                     break;
                 case Database.RECORD_TYPE_WITHDRAWAL:
-                    await handleWithdrawal(enumerationState, record);
+                    await handleWithdrawal(enumerationState, record, this.startMonth, this.startYear);
                     break;
                 case Database.RECORD_TYPE_BALANCE:
-                    await handleBalanceCheckpoint(enumerationState, record);
+                    await handleBalanceCheckpoint(enumerationState, record, this.startMonth, this.startYear);
                     break;
                 default:
                     console.warn('Ignoring data record of unknown type: %j', record);
@@ -301,7 +311,7 @@ class Aggregator {
             }
         });
 
-        await emitSnapshotsUpUntil(enumerationState, (new Date).getTime());
+        await emitSnapshotsUpUntil(enumerationState, (new Date).getTime(), this.startMonth, this.startYear);
     };
 
 }

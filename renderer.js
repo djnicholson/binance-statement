@@ -5,7 +5,7 @@ var Statement = function() {
     var activeMonth = null;
     var rendererPointers = {};
     var allCharts = [];
-    var dateFormatter = new Intl.DateTimeFormat('default', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
+    var dateFormatter = new Intl.DateTimeFormat('default', { year: 'numeric', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
     var monthChartLayout = {
         // margins:
         l: 0,
@@ -133,11 +133,43 @@ var Statement = function() {
         }
     }
 
+    var renderLotsTable = function(contentArea, asset, lots, unitOfAccount) {
+        var table = $('#bs-lot-table-template').clone().removeAttr('id');
+        contentArea.append(table);
+        table.find('.bs-asset').text(asset);
+        for (var i = 0; i < lots.length; i++) {
+            var lot = lots[i];
+            var row = $('#bs-lot-row-template').clone().removeAttr('id');
+            row.find('.bs-lot').text(priceString(lot.quantity, asset) + ' ' + lot.sourceDescription);
+            row.find('.bs-purchase-time').text(dateFormatter.format(new Date(lot.utcTimestamp)));
+            row.find('.bs-cost-basis').text(priceString(lot.costBasisPrice * lot.quantity, unitOfAccount));
+            table.find('tbody').append(row);
+        }
+    };
+
+    var renderLotsTables = function(contentArea, event, unitOfAccount) {
+        var allLots = event.lots || [];
+        event.fills && event.fills.forEach(f => f.lots && (allLots = allLots.concat(f.lots)));
+        if (allLots.length > 0) {
+            var lotsByAsset = {};
+            for (var i = 0; i < allLots.length; i++) {
+                var lot = allLots[i];
+                lotsByAsset[lot.asset] = lotsByAsset[lot.asset] || [];
+                lotsByAsset[lot.asset].push(lot);
+            }
+
+            for (var asset in lotsByAsset) {
+                renderLotsTable(contentArea, asset, lotsByAsset[asset], unitOfAccount);
+            }
+        }
+    };
+
     var maybePopulateSecondRow = function(row, event, eventDate, unitOfAccount) {
         if (event.eventType.indexOf('DEPOSIT') !== -1) {
             return false;
         } else {
-            row.find('.bs-content').text("TODO");
+            var contentArea = row.find('.bs-content');
+            renderLotsTables(contentArea, event, unitOfAccount);
             return true;
         }
     }
@@ -184,16 +216,18 @@ var Statement = function() {
             var secondRow = $('#bs-activity-detail-row-template').clone().removeAttr('id');
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
+            row.addClass('clickable').click(() => {
+                $('.bs-activity-row.bs-selected').removeClass('bs-selected');
+                var wasVisible = secondRow && secondRow.is(':visible');
+                $('.bs-activity-detail-row').hide();
+                !wasVisible && secondRow && secondRow.show();
+                row.addClass('bs-selected');
+            });
             if (maybePopulateSecondRow(secondRow, event, eventDate, unitOfAccount)) {
                 tableBody.append(secondRow);
                 secondRow.hide();
-                row.addClass('clickable').click(() => {
-                    $('.bs-activity-row.bs-selected').removeClass('bs-selected');
-                    var wasVisible = secondRow.is(':visible');
-                    $('.bs-activity-detail-row').hide();
-                    !wasVisible && secondRow.show();
-                    row.addClass('bs-selected');
-                });
+            } else {
+                secondRow = null;
             }
         }
     };

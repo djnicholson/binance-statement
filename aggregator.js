@@ -132,7 +132,7 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
             record.Quantity,
             record.QuoteAsset,
             new BigNumber(record.Price).multipliedBy(record.Quantity),
-            'Bought using ' + record.QuoteAsset,
+            'bought using ' + record.QuoteAsset,
             record.UtcTimestamp);
 
         event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BUY);
@@ -184,7 +184,7 @@ const handleDeposit = async(enumerationState, record, startMonth, startYear) => 
 
     adjustBalance(enumerationState, record.Asset, record.Amount);
 
-    await addLot(enumerationState, record.Asset, record.Amount, record.Asset, record.Amount, 'Deposited', record.UtcTimestamp);
+    await addLot(enumerationState, record.Asset, record.Amount, record.Asset, record.Amount, 'deposited', record.UtcTimestamp);
 
     const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
@@ -237,7 +237,7 @@ const handleBalanceCheckpoint = async(enumerationState, record, startMonth, star
 
         if (adjustment.isGreaterThan(0.0)) {
 
-            await addLot(enumerationState, record.Asset, adjustment, record.Asset, 0, 'Credited by Binance', record.UtcTimestamp);
+            await addLot(enumerationState, record.Asset, adjustment, record.Asset, 0, 'credited by Binance', record.UtcTimestamp);
 
             const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_CREDIT);
             event.asset = record.Asset;

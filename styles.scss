@@ -47,11 +47,6 @@ ul.bs-month-selector {
     @extend .pt-3;
 }
 
-.bs-title {
-    @extend .h4;
-    @extend .text-primary;
-}
-
 table {
     @extend .table;
     td {
@@ -60,6 +55,10 @@ table {
 }
 
 .bs-month-page {
+    .bs-title {
+        @extend .h4;
+        @extend .text-primary;
+    }
     .bs-month-chart {
         @extend .mb-3;
         height: 30vh;
@@ -101,6 +100,31 @@ table {
                     @extend .p-2;
                     .bs-content {
                         @extend .row;
+                        .bs-lot-table {
+                            @extend .col-xl-6;
+                            @extend .col-12;
+                            .bs-lot-title {
+                                font-weight: bolder;
+                            }
+                            table {
+                                @extend .pl-2;
+                                table-layout: fixed;
+                                th {
+                                    @extend .p-0;
+                                }
+                                .bs-purchase-time {
+                                    width: 30%;
+                                }
+                                .bs-lot {
+                                    @extend .text-center;
+                                    width: 45%;
+                                }
+                                .bs-cost-basis {
+                                    @extend .text-right;
+                                    width: 25%;
+                                }
+                            }
+                        }
                     }
                 }
             }

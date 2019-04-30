@@ -144,7 +144,7 @@ var Statement = function() {
             totalCost += costBasis;
             var row = $('#bs-lot-row-template').clone().removeAttr('id');
             row.find('.bs-lot').text(priceString(lot.quantity, asset) + ' ' + lot.sourceDescription);
-            row.find('.bs-purchase-time').text(dateFormatter.format(new Date(lot.utcTimestamp)));
+            lot.utcTimestamp && row.find('.bs-purchase-time').text(dateFormatter.format(new Date(lot.utcTimestamp)));
             row.find('.bs-cost-basis').text(priceString(costBasis, unitOfAccount));
             table.find('tbody').append(row);
         }

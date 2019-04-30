@@ -90,7 +90,7 @@ const matchLots = (enumerationState, asset, amount) => {
     let amountRemaining = new BigNumber(amount);
     while (amountRemaining.isGreaterThan(0)) {
         if (lots.length == 0) {
-            result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: null, sourceDescription: 'Unknown', utcTimestamp: null });
+            result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: null, sourceDescription: 'from an unknown source', utcTimestamp: null });
             amountRemaining = new BigNumber(0);
         } else {
             var peek = lots[0];

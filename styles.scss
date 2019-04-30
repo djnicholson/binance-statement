@@ -58,18 +58,23 @@ table {
     .bs-title {
         @extend .h4;
         @extend .text-primary;
+        @extend .text-right;
+        @extend .pb-2;
     }
     .bs-month-summary {
         @extend .row;
         .bs-item-description {
             @extend .col-7;
+            @extend .col-md-3;
             @extend .text-right;
             @extend .h6;
+            font-style: italic;
         }
         .bs-item-value {
             @extend .col-5;
+            @extend .col-md-3;
             @extend .text-right;
-            @extend .h4;
+            @extend .h5;
         }
     }
     .bs-month-chart {

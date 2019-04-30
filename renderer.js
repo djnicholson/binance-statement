@@ -170,7 +170,7 @@ var Statement = function() {
     };
 
     var maybePopulateSecondRow = function(row, event, eventDate, unitOfAccount) {
-        if (event.eventType.indexOf('DEPOSIT') !== -1) {
+        if ((event.eventType.indexOf('DEPOSIT') !== -1) || event.eventType.indexOf('CREDIT') !== -1) {
             return false;
         } else {
             var contentArea = row.find('.bs-content');

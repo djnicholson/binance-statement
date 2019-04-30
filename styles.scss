@@ -10,6 +10,10 @@ body {
     font-size: 0.7em;
 }
 
+.clickable {
+    cursor: pointer;
+}
+
 ul#bs-unit-selector {
     @extend .nav;
     @extend .nav-pills;
@@ -18,7 +22,7 @@ ul#bs-unit-selector {
         @extend .nav-item;
         a {
             @extend .nav-link;
-            cursor: pointer;
+            @extend .clickable;
         }
     }
 }
@@ -34,7 +38,7 @@ ul.bs-month-selector {
         @extend .nav-item;
         a {
             @extend .nav-link;
-            cursor: pointer;
+            @extend .clickable;
         }
     }
 }
@@ -63,25 +67,43 @@ table {
         width: 95vw;
     }
     table {
-        @extend .table-hover;
         @extend .table-sm;
         @extend .table-borderless;
-        .bs-action,
-        .bs-sub-action {
-            @extend .text-center;
+        .bs-activity-row {
+            &.bs-selected {
+                background-color: theme-color-level('light', 1);
+            }
+            .bs-action,
+            .bs-sub-action {
+                @extend .text-center;
+            }
+            .bs-sub-action {
+                @extend .small;
+            }
+            .bs-amount {
+                @extend .text-monospace;
+                @extend .text-info;
+            }
+            .bs-value {
+                @extend .text-right;
+                @extend .text-primary;
+                font-size: 1.1em;
+                font-weight: bold;
+            }
         }
-        .bs-sub-action {
-            @extend .small;
-        }
-        .bs-amount {
-            @extend .text-monospace;
-            @extend .text-info;
-        }
-        .bs-value {
-            @extend .text-right;
-            @extend .text-primary;
-            font-size: 1.1em;
-            font-weight: bold;
+        .bs-activity-detail-row {
+            td {
+                @extend .p-0;
+                .bs-popout {
+                    @extend .bg-light;
+                    @extend .container;
+                    @extend .mb-2;
+                    @extend .p-2;
+                    .bs-content {
+                        @extend .row;
+                    }
+                }
+            }
         }
     }
 }

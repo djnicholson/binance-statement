@@ -133,6 +133,15 @@ var Statement = function() {
         }
     }
 
+    var maybePopulateSecondRow = function(row, event, eventDate, unitOfAccount) {
+        if (event.eventType.indexOf('DEPOSIT') !== -1) {
+            return false;
+        } else {
+            row.find('.bs-content').text("TODO");
+            return true;
+        }
+    }
+
     var findTraceForAsset = function(datasets, asset) {
         for (var i = 0; i < datasets.length; i++) {
             var dataset = datasets[i];
@@ -172,8 +181,20 @@ var Statement = function() {
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthElements.table;
             var row = $('#bs-activity-row-template').clone().removeAttr('id');
+            var secondRow = $('#bs-activity-detail-row-template').clone().removeAttr('id');
             populateMainRow(row, event, eventDate, unitOfAccount);
             tableBody.append(row);
+            if (maybePopulateSecondRow(secondRow, event, eventDate, unitOfAccount)) {
+                tableBody.append(secondRow);
+                secondRow.hide();
+                row.addClass('clickable').click(() => {
+                    $('.bs-activity-row.bs-selected').removeClass('bs-selected');
+                    var wasVisible = secondRow.is(':visible');
+                    $('.bs-activity-detail-row').hide();
+                    !wasVisible && secondRow.show();
+                    row.addClass('bs-selected');
+                });
+            }
         }
     };
 

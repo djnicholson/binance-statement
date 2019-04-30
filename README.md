@@ -24,7 +24,17 @@ In a JavaScript file:
 
     const makeStatement = require('binance-statement');
     // ...
-    await makeStatement(apiKey, apiSecret, startMonth, startYear, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount);
+    await makeStatement(
+        apiKey, 
+        apiSecret, 
+        startMonth, 
+        startYear, 
+        outputFile, 
+        dataFile, 
+        cacheFile, 
+        syncFillsFromBinance, 
+        speed, 
+        unitsOfAccount);
     
 ## Tips
 

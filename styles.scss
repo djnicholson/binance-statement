@@ -103,6 +103,7 @@ table {
                         .bs-table {
                             @extend .col-xl-6;
                             @extend .col-12;
+                            background-color: theme-color-level('light', -1);
                             .bs-table-title {
                                 font-weight: bolder;
                             }

@@ -94,16 +94,18 @@ table {
             td {
                 @extend .p-0;
                 .bs-popout {
-                    @extend .bg-light;
-                    @extend .container;
-                    @extend .mb-2;
-                    @extend .p-2;
+                    @extend .pl-4;
+                    @extend .pr-4;
                     .bs-content {
-                        @extend .row;
+                        @extend .bg-light;
                         .bs-table {
-                            @extend .col-xl-6;
-                            @extend .col-12;
-                            background-color: theme-color-level('light', -1);
+                            @extend .pb-2;
+                            @extend .pl-2;
+                            @extend .pr-2;
+                            .bs-shaded {
+                                background-color: theme-color-level('light', -3);
+                                @extend .p-2;
+                            }
                             .bs-table-title {
                                 font-weight: bolder;
                             }

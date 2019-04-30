@@ -1,6 +1,6 @@
 {
     "name": "binance-statement",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "description": "Generates a financial statement for a Binance account",
     "main": "make-statement.js",
     "bin": "./binance-statement.js",

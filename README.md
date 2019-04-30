@@ -4,8 +4,9 @@ A command-line tool and library to create pretty financial statements for an arb
 
 ## Usage
 
-A command-line tool and an API are provided.  In both cases a standalone HTML file is generated that can be used
-to view the statement in a web browser.
+A command-line tool and an API are provided.  
+
+In both cases a standalone HTML file is generated that can be used to view the statement in a web browser.
 
 ### Command line
 

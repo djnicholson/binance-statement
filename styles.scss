@@ -114,19 +114,45 @@ table {
                                 th {
                                     @extend .p-0;
                                 }
+                                .bs-total-title {
+                                    @extend .text-right;
+                                }
                             }
                         }
                         .bs-lot-table {
                             table {
                                 .bs-purchase-time {
-                                    width: 30%;
+                                    width: 35%;
                                 }
                                 .bs-lot {
                                     width: 45%;
                                 }
                                 .bs-cost-basis {
                                     @extend .text-right;
-                                    width: 25%;
+                                    width: 20%;
+                                }
+                                .bs-value {
+                                    @extend .text-right;
+                                    width: 20%;
+                                }
+                                .bs-gross-profit {
+                                    @extend .text-right;
+                                    width: 20%;
+                                }
+                            }
+                        }
+                        .bs-profit-table {
+                            table {
+                                .bs-description {
+                                    width: 80%;
+                                }
+                                .bs-value {
+                                    @extend .text-right;
+                                    width: 20%;
+                                }
+                                .bs-total {
+                                    @extend .text-right;
+                                    width: 20%;
                                 }
                             }
                         }
@@ -136,7 +162,7 @@ table {
                                     width: 20%;
                                 }
                                 .bs-fill-detail {
-                                    width: 35%;
+                                    width: 30%;
                                 }
                                 .bs-method {
                                     width: 15%;
@@ -147,11 +173,7 @@ table {
                                 }
                                 .bs-value {
                                     @extend .text-right;
-                                    width: 15%;
-                                }
-                                .bs-cost {
-                                    @extend .text-right;
-                                    width: 15%;
+                                    width: 20%;
                                 }
                             }
                         }

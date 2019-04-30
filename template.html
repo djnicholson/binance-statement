@@ -53,7 +53,7 @@
     <div class="d-none">
         <div id="bs-lot-table-template" class="bs-table bs-lot-table">
             <div class="bs-shaded">
-                <div class="bs-table-title"><span class="bs-asset"></span> lots:</div>
+                <div class="bs-table-title"><span class="bs-asset"></span> lots sold:</div>
                 <table>
                     <thead>
                         <tr>
@@ -66,9 +66,37 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td></td>
-                            <td></td>
+                            <th colspan="2" class="bs-total-title">Original cost of assets sold:</th>
                             <th class="bs-cost-basis"></th>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="bs-total-title">Current value of assets sold:</th>
+                            <th class="bs-value"></th>
+                        </tr>
+                        <tr>
+                            <th colspan="2" class="bs-total-title">Profit/loss:</th>
+                            <th class="bs-gross-profit"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        <div id="bs-profit-table-template" class="bs-table bs-profit-table">
+            <div class="bs-shaded">
+                <div class="bs-table-title">Realized profit/loss/cost summary:</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="bs-description">Item:</th>
+                            <th class="bs-value">Value:</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th class="bs-total-title">Net profit/loss:</th>
+                            <th class="bs-total"></th>
                         </tr>
                     </tfoot>
                 </table>
@@ -91,18 +119,8 @@
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <th class="bs-commission">Total value:</th>
+                            <th colspan="4" class="bs-total-title">Total value of commission paid:</th>
                             <th class="bs-value"></th>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <th class="bs-commission">Total cost:</th>
-                            <th class="bs-cost"></th>
                         </tr>
                     </tfoot>
                 </table>
@@ -144,6 +162,10 @@
             <td class="bs-fill-detail"></td>
             <td class="bs-method"></td>
             <td class="bs-commission"></td>
+            <td class="bs-value"></td>
+        </tr>
+        <tr id="bs-profit-row-template">
+            <td class="bs-description"></td>
             <td class="bs-value"></td>
         </tr>
     </table>

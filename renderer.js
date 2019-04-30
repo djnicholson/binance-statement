@@ -133,13 +133,13 @@ var Statement = function() {
         }
     }
 
-    var renderCommissionTable = function(contentArea, event, unitOfAccount) {
+    var renderCommissionTable = function(contentArea, event, unitOfAccount, profitLossEntries) {
         var table = $('#bs-commission-table-template').clone().removeAttr('id');
         contentArea.append(table);
         var totalValue = 0.0;
         for (var i = 0; i < event.fills.length; i++) {
             var fill = event.fills[i];
-            totalValue += fill.commissionValue;
+            totalValue += parseFloat(fill.commissionValue);
             var row = $('#bs-commission-row-template').clone().removeAttr('id');
             row.find('.bs-fill-time').text(dateFormatter.format(new Date(fill.utcTimestamp)));
             row.find('.bs-fill-detail').text(priceString(fill.quantity, fill.baseAsset) + ' for ' + priceString(fill.quantity * fill.price, fill.quoteAsset));
@@ -150,10 +150,28 @@ var Statement = function() {
         }
 
         table.find('tfoot .bs-value').text(priceString(totalValue, unitOfAccount));
-        table.find('tfoot .bs-cost').text(priceString(event.commissionCost, unitOfAccount));
+        profitLossEntries.push([
+            'Commission paid', -1 * totalValue
+        ]);
     };
 
-    var renderLotsTable = function(contentArea, asset, lots, unitOfAccount) {
+    var renderProfitTable = function(contentArea, event, unitOfAccount, profitLossEntries) {
+        var table = $('#bs-profit-table-template').clone().removeAttr('id');
+        contentArea.append(table);
+        var netProfit = 0.0;
+        for (var i = 0; i < profitLossEntries.length; i++) {
+            var entry = profitLossEntries[i];
+            netProfit += entry[1];
+            var row = $('#bs-profit-row-template').clone().removeAttr('id');
+            row.find('.bs-description').text(entry[0]);
+            row.find('.bs-value').text(priceString(entry[1], unitOfAccount));
+            table.find('tbody').append(row);
+        }
+
+        table.find('tfoot .bs-total').text(priceString(netProfit, unitOfAccount));
+    };
+
+    var renderLotsTable = function(contentArea, asset, lots, unitOfAccount, event, profitLossEntries, currentValue) {
         var table = $('#bs-lot-table-template').clone().removeAttr('id');
         contentArea.append(table);
         table.find('.bs-asset').text(asset);
@@ -170,9 +188,15 @@ var Statement = function() {
         }
 
         table.find('tfoot .bs-cost-basis').text(priceString(totalCost, unitOfAccount));
+        table.find('tfoot .bs-value').text(priceString(currentValue, unitOfAccount));
+        table.find('tfoot .bs-gross-profit').text(priceString(currentValue - totalCost, unitOfAccount));
+        profitLossEntries.push([
+            'Realizing ' + (event.value > totalCost ? 'profit' : 'loss') + ' from sale of ' + asset,
+            currentValue - totalCost
+        ]);
     };
 
-    var renderLotsTables = function(contentArea, event, unitOfAccount) {
+    var renderLotsTables = function(contentArea, event, unitOfAccount, profitLossEntries) {
         var allLots = event.lots || [];
         event.fills && event.fills.forEach(f => f.lots && (allLots = allLots.concat(f.lots)));
         if (allLots.length > 0) {
@@ -184,7 +208,14 @@ var Statement = function() {
             }
 
             for (var asset in lotsByAsset) {
-                renderLotsTable(contentArea, asset, lotsByAsset[asset], unitOfAccount);
+                renderLotsTable(
+                    contentArea,
+                    asset,
+                    lotsByAsset[asset],
+                    unitOfAccount,
+                    event,
+                    profitLossEntries,
+                    asset == event.baseAsset ? event.value : event.commissionValue);
             }
         }
     };
@@ -194,8 +225,11 @@ var Statement = function() {
             return false;
         } else {
             var contentArea = row.find('.bs-content');
-            event.fills && event.fills.length && renderCommissionTable(contentArea, event, unitOfAccount);
-            renderLotsTables(contentArea, event, unitOfAccount);
+            var profitLossEntries = [];
+            event.fills && event.fills.length && renderCommissionTable(contentArea, event, unitOfAccount, profitLossEntries);
+            renderLotsTables(contentArea, event, unitOfAccount, profitLossEntries);
+            profitLossEntries.reverse();
+            renderProfitTable(contentArea, event, unitOfAccount, profitLossEntries);
             return true;
         }
     }

@@ -137,14 +137,21 @@ var Statement = function() {
         var table = $('#bs-lot-table-template').clone().removeAttr('id');
         contentArea.append(table);
         table.find('.bs-asset').text(asset);
+        var totalCost = 0.0;
         for (var i = 0; i < lots.length; i++) {
             var lot = lots[i];
+            var costBasis = lot.costBasisPrice * lot.quantity;
+            totalCost += costBasis;
             var row = $('#bs-lot-row-template').clone().removeAttr('id');
             row.find('.bs-lot').text(priceString(lot.quantity, asset) + ' ' + lot.sourceDescription);
             row.find('.bs-purchase-time').text(dateFormatter.format(new Date(lot.utcTimestamp)));
-            row.find('.bs-cost-basis').text(priceString(lot.costBasisPrice * lot.quantity, unitOfAccount));
+            row.find('.bs-cost-basis').text(priceString(costBasis, unitOfAccount));
             table.find('tbody').append(row);
         }
+
+        var row = $('#bs-lot-row-template').clone().removeAttr('id');
+        row.find('.bs-cost-basis').text(priceString(totalCost, unitOfAccount));
+        table.find('tfoot').append(row);
     };
 
     var renderLotsTables = function(contentArea, event, unitOfAccount) {

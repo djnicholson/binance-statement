@@ -85,19 +85,19 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
 };
 
 const matchLots = (enumerationState, asset, amount) => {
-    const lots = enumerationState.lots[asset] || [];
+    let lots = enumerationState.lots[asset] || [];
     const result = [];
     let amountRemaining = new BigNumber(amount);
     while (amountRemaining.isGreaterThan(0)) {
         if (lots.length == 0) {
-            result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: null, sourceDescription: 'from an unknown source', utcTimestamp: null });
+            result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: new BigNumber(0), sourceDescription: 'from an unknown source', utcTimestamp: null });
             amountRemaining = new BigNumber(0);
         } else {
             var peek = lots[0];
             if (peek.quantity.isGreaterThan(amountRemaining)) {
                 result.push({ asset: asset, quantity: amountRemaining, costBasisPrice: peek.costBasisPrice, sourceDescription: peek.sourceDescription, utcTimestamp: peek.utcTimestamp });
-                amountRemaining = new BigNumber(0);
                 peek.quantity = peek.quantity.minus(amountRemaining);
+                amountRemaining = new BigNumber(0);
             } else {
                 result.push({ asset: asset, quantity: peek.quantity, costBasisPrice: peek.costBasisPrice, sourceDescription: peek.sourceDescription, utcTimestamp: peek.utcTimestamp });
                 amountRemaining = amountRemaining.minus(peek.quantity);

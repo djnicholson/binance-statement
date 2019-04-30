@@ -59,6 +59,19 @@ table {
         @extend .h4;
         @extend .text-primary;
     }
+    .bs-month-summary {
+        @extend .row;
+        .bs-item-description {
+            @extend .col-7;
+            @extend .text-right;
+            @extend .h6;
+        }
+        .bs-item-value {
+            @extend .col-5;
+            @extend .text-right;
+            @extend .h4;
+        }
+    }
     .bs-month-chart {
         @extend .mb-3;
         height: 30vh;

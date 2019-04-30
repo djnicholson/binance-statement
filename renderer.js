@@ -5,6 +5,7 @@ var Statement = function() {
     var activeMonth = null;
     var rendererPointers = {};
     var allCharts = [];
+    var allMonthSummaries = [];
     var dateFormatter = new Intl.DateTimeFormat('default', { year: 'numeric', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', });
     var monthChartLayout = {
         // margins:
@@ -78,7 +79,7 @@ var Statement = function() {
         return statementPages[unitOfAccount];
     };
 
-    var getElementsForMonth = function(statementPage, eventDate) {
+    var getElementsForMonth = function(statementPage, eventDate, unitOfAccount) {
         var year = eventDate.getFullYear();
         var month = eventDate.getMonth() + 1;
         var pageId = year + '-' + month;
@@ -88,7 +89,9 @@ var Statement = function() {
             var pageArea = $($('#bs-month-page-template').html());
             var chartArea = pageArea.find('.bs-month-chart');
             var chartData = [];
+            var monthSummary = { openingValue: 0, grossProfit: 0, totalCommission: 0, deposits: 0, adjustments: 0, closingValue: 0 };
             allCharts.push({ chartArea: chartArea, chartData: chartData, plotted: false });
+            allMonthSummaries.push({ unitOfAccount: unitOfAccount, summaryArea: pageArea.find('.bs-month-summary'), monthSummary: monthSummary });
             pageArea.find('.bs-title').text(monthName + ' ' + year);
             statementPage.find('.bs-month-pages').append(pageArea);
             !statementPage.anyMonthPages || pageArea.hide();
@@ -99,7 +102,12 @@ var Statement = function() {
             !statementPage.anyMonthPages && switcherLink.find('a').addClass('active');
             statementPage.anyMonthPages = true;
             statementPage.find('.bs-month-selector').append(switcherLink);
-            statementPage.monthPages[pageId] = { page: pageArea, table: pageArea.find('tbody'), chartData: chartData };
+            statementPage.monthPages[pageId] = {
+                page: pageArea,
+                table: pageArea.find('tbody'),
+                chartData: chartData,
+                monthSummary: monthSummary,
+            };
         }
 
         return statementPage.monthPages[pageId];
@@ -133,7 +141,7 @@ var Statement = function() {
         }
     }
 
-    var renderCommissionTable = function(contentArea, event, unitOfAccount, profitLossEntries) {
+    var renderCommissionTable = function(contentArea, event, unitOfAccount, profitLossEntries, monthSummary) {
         var table = $('#bs-commission-table-template').clone().removeAttr('id');
         contentArea.append(table);
         var totalValue = 0.0;
@@ -150,6 +158,7 @@ var Statement = function() {
         }
 
         table.find('tfoot .bs-value').text(priceString(totalValue, unitOfAccount));
+        monthSummary.totalCommission += (-1 * totalValue);
         profitLossEntries.push([
             'Commission paid', -1 * totalValue
         ]);
@@ -171,7 +180,7 @@ var Statement = function() {
         table.find('tfoot .bs-total').text(priceString(netProfit, unitOfAccount));
     };
 
-    var renderLotsTable = function(contentArea, asset, lots, unitOfAccount, event, profitLossEntries, currentValue) {
+    var renderLotsTable = function(contentArea, asset, lots, unitOfAccount, event, profitLossEntries, monthSummary, currentValue) {
         var table = $('#bs-lot-table-template').clone().removeAttr('id');
         contentArea.append(table);
         table.find('.bs-asset').text(asset);
@@ -190,13 +199,14 @@ var Statement = function() {
         table.find('tfoot .bs-cost-basis').text(priceString(totalCost, unitOfAccount));
         table.find('tfoot .bs-value').text(priceString(currentValue, unitOfAccount));
         table.find('tfoot .bs-gross-profit').text(priceString(currentValue - totalCost, unitOfAccount));
+        monthSummary.grossProfit += (currentValue - totalCost);
         profitLossEntries.push([
             'Realizing ' + (event.value > totalCost ? 'profit' : 'loss') + ' from sale of ' + asset,
             currentValue - totalCost
         ]);
     };
 
-    var renderLotsTables = function(contentArea, event, unitOfAccount, profitLossEntries) {
+    var renderLotsTables = function(contentArea, event, unitOfAccount, profitLossEntries, monthSummary) {
         var allLots = event.lots || [];
         event.fills && event.fills.forEach(f => f.lots && (allLots = allLots.concat(f.lots)));
         if (allLots.length > 0) {
@@ -215,19 +225,30 @@ var Statement = function() {
                     unitOfAccount,
                     event,
                     profitLossEntries,
+                    monthSummary,
                     (asset == event.baseAsset) || (asset == event.asset) ? event.value : event.commissionValue);
             }
         }
     };
 
-    var maybePopulateSecondRow = function(row, event, eventDate, unitOfAccount) {
+    var maybePopulateSecondRow = function(row, event, unitOfAccount, monthSummary) {
+        if (event.eventType.indexOf('DEPOSIT') !== -1) {
+            monthSummary.deposits += parseFloat(event.value);
+        } else if (event.eventType.indexOf('WITHDRAW') !== -1) {
+            monthSummary.deposits += (-1 * parseFloat(event.value));
+        } else if (event.eventType.indexOf('CREDIT') !== -1) {
+            monthSummary.adjustments += parseFloat(event.value);
+        } else if (event.eventType.indexOf('DEBIT') !== -1) {
+            monthSummary.adjustments += (-1 * parseFloat(event.value));
+        }
+
         if ((event.eventType.indexOf('DEPOSIT') !== -1) || event.eventType.indexOf('CREDIT') !== -1) {
             return false;
         } else {
             var contentArea = row.find('.bs-content');
             var profitLossEntries = [];
-            event.fills && event.fills.length && renderCommissionTable(contentArea, event, unitOfAccount, profitLossEntries);
-            renderLotsTables(contentArea, event, unitOfAccount, profitLossEntries);
+            event.fills && event.fills.length && renderCommissionTable(contentArea, event, unitOfAccount, profitLossEntries, monthSummary);
+            renderLotsTables(contentArea, event, unitOfAccount, profitLossEntries, monthSummary);
             profitLossEntries.reverse();
             renderProfitTable(contentArea, event, unitOfAccount, profitLossEntries);
             return true;
@@ -268,7 +289,7 @@ var Statement = function() {
     var renderEvent = function(unitOfAccount, event) {
         var statementPage = getStatementPageForUnitOfAccount(unitOfAccount);
         var eventDate = new Date(event.utcTimestamp);
-        var monthElements = getElementsForMonth(statementPage, eventDate);
+        var monthElements = getElementsForMonth(statementPage, eventDate, unitOfAccount);
         addValuationToChart(event.utcTimestamp, event.valuationComposition, monthElements.chartData);
         if (event.eventType != 'EVENT_TYPE_SNAPSHOT') {
             var tableBody = monthElements.table;
@@ -283,7 +304,9 @@ var Statement = function() {
                 !wasVisible && secondRow && secondRow.show();
                 row.addClass('bs-selected');
             });
-            if (maybePopulateSecondRow(secondRow, event, eventDate, unitOfAccount)) {
+            monthElements.monthSummary.closingValue = event.totalPortfolioValue;
+            monthElements.monthSummary.openingValue = monthElements.monthSummary.openingValue || event.totalPortfolioValue;
+            if (maybePopulateSecondRow(secondRow, event, unitOfAccount, monthElements.monthSummary)) {
                 tableBody.append(secondRow);
                 secondRow.hide();
             } else {
@@ -310,6 +333,20 @@ var Statement = function() {
             } else {
                 Plotly.newPlot(allCharts[i].chartArea[0], allCharts[i].chartData, monthChartLayout, monthChartOptions);
             }
+        }
+
+        for (var i = 0; i < allMonthSummaries.length; i++) {
+            var summaryArea = allMonthSummaries[i].summaryArea;
+            var monthSummary = allMonthSummaries[i].monthSummary;
+            var unitOfAccount = allMonthSummaries[i].unitOfAccount;
+            var change = monthSummary.closingValue - monthSummary.openingValue - monthSummary.grossProfit - monthSummary.totalCommission - monthSummary.deposits - monthSummary.adjustments;
+            summaryArea.find('.bs-open').text(priceString(monthSummary.openingValue, unitOfAccount));
+            summaryArea.find('.bs-gross-profit').text(priceString(monthSummary.grossProfit, unitOfAccount));
+            summaryArea.find('.bs-commission').text(priceString(monthSummary.totalCommission, unitOfAccount));
+            summaryArea.find('.bs-change').text(priceString(change, unitOfAccount));
+            summaryArea.find('.bs-deposits').text(priceString(monthSummary.deposits, unitOfAccount));
+            summaryArea.find('.bs-adjustments').text(priceString(monthSummary.adjustments, unitOfAccount));
+            summaryArea.find('.bs-close').text(priceString(monthSummary.closingValue, unitOfAccount));
         }
     };
 

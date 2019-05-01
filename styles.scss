@@ -63,7 +63,12 @@ table {
     }
     .bs-month-summary {
         @extend .row;
+        @extend .justify-content-end;
         .bs-item-description {
+            &.bs-bigger-item {
+                @extend .h5;
+                font-style: normal;
+            }
             @extend .col-7;
             @extend .col-md-3;
             @extend .text-right;

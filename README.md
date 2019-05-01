@@ -39,6 +39,10 @@ In a JavaScript file:
         speed, 
         unitsOfAccount);
     
+## Example statement
+    
+![Screen shot of an example statement](screen-shot.png)
+    
 ## Tips
 
 * Run the script about once per day

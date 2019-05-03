@@ -320,22 +320,24 @@ class Aggregator {
         };
 
         await this.db.forEachRecord(async record => {
-            switch (record.RecordType) {
-                case Database.RECORD_TYPE_FILL:
-                    await handleFill(enumerationState, record, this.startMonth, this.startYear);
-                    break;
-                case Database.RECORD_TYPE_DEPOSIT:
-                    await handleDeposit(enumerationState, record, this.startMonth, this.startYear);
-                    break;
-                case Database.RECORD_TYPE_WITHDRAWAL:
-                    await handleWithdrawal(enumerationState, record, this.startMonth, this.startYear);
-                    break;
-                case Database.RECORD_TYPE_BALANCE:
-                    await handleBalanceCheckpoint(enumerationState, record, this.startMonth, this.startYear);
-                    break;
-                default:
-                    console.warn('Ignoring data record of unknown type: %j', record);
-                    break;
+            if (record.UtcTimestamp + (1000 * 60) < (new Date).getTime()) { // need enclosing 1m candle to be complete for pricing
+                switch (record.RecordType) {
+                    case Database.RECORD_TYPE_FILL:
+                        await handleFill(enumerationState, record, this.startMonth, this.startYear);
+                        break;
+                    case Database.RECORD_TYPE_DEPOSIT:
+                        await handleDeposit(enumerationState, record, this.startMonth, this.startYear);
+                        break;
+                    case Database.RECORD_TYPE_WITHDRAWAL:
+                        await handleWithdrawal(enumerationState, record, this.startMonth, this.startYear);
+                        break;
+                    case Database.RECORD_TYPE_BALANCE:
+                        await handleBalanceCheckpoint(enumerationState, record, this.startMonth, this.startYear);
+                        break;
+                    default:
+                        console.warn('Ignoring data record of unknown type: %j', record);
+                        break;
+                }
             }
         });
 

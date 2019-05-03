@@ -112,7 +112,7 @@ class PriceCache {
         }
 
         try {
-            await this.preBinanceCallback();
+            await this.preBinanceCallback('Getting ' + interval + ' candles for ' + symbol + ' at ' + new Date(utcTimestamp));
             const candles = await this.binance.candles({ symbol: symbol, interval: interval, endTime: utcTimestamp, limit: 1 });
             if (candles.length == 0) {
                 candle = undefined; // this timestamp is probably before the creation date of this market

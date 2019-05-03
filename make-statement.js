@@ -145,16 +145,7 @@ const makePrecisoinTable = async(binance) => {
     return result;
 };
 
-const logInterval = 2 * 1000;
-
-let lastLogEmission = 0;
-
 const logEvent = event => {
-    const utcNow = (new Date).getTime();
-    if (lastLogEmission + logInterval > utcNow) {
-        return;
-    }
-
     const numberString = n => n ? n.toFixed() : "(unknown)";
     switch (event.eventType) {
         case Aggregator.EVENT_TYPE_BUY_AGGREGATION:
@@ -179,15 +170,16 @@ const logEvent = event => {
             console.log('%s:                              portfolio value: %s', new Date(event.utcTimestamp), numberString(event.totalPortfolioValue));
             break;
     }
-
-    lastLogEmission = utcNow;
 };
 
 const main = async(apiKey, apiSecret, startMonth, startYear, outputFile, dataFile, cacheFile, syncFillsFromBinance, speed, unitsOfAccount) => {
     try {
         const db = await Database.open(dataFile);
         const binance = new Binance({ apiKey: apiKey, apiSecret: apiSecret });
-        const priceCache = await PriceCache.create(cacheFile, binance, async() => { await sleepForBinance(speed); });
+        const priceCache = await PriceCache.create(cacheFile, binance, async(request) => {
+            await sleepForBinance(speed);
+            console.debug('Binance request: %s', request);
+        });
 
         await takeBalanceSnapshot(binance, db, speed);
         await synchronizeDeposits(binance, db, speed);

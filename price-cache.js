@@ -41,8 +41,19 @@ class PriceCache {
     static get INTERVAL_1_WEEK() { return '1w'; }
     static get INTERVAL_1_MONTH() { return '1M'; }
 
-    async getPrice(utcTimestamp, baseAsset, quoteAsset, statusCallback, avoidIndirectCalculation) {
-        console.debug('getPrice', utcTimestamp, baseAsset, quoteAsset, statusCallback, avoidIndirectCalculation);
+    async getPrice(utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization) {
+        console.debug('getPrice', utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization);
+
+        memoization = memoization || {};
+        const memoize = value => {
+            memoization[baseAsset + quoteAsset] = { memoized: true, value: value };
+            return value;
+        };
+
+        if (memoization[baseAsset + quoteAsset].memoized) {
+            return memoization[baseAsset + quoteAsset].value;
+        }
+
         baseAsset = normalizeAssetCase(baseAsset);
         quoteAsset = normalizeAssetCase(quoteAsset);
 
@@ -50,13 +61,13 @@ class PriceCache {
         const utcTimestampNormalized = (Math.round(utcTimestamp / (1000 * 60)) * (1000 * 60) + (30 * 1000));
 
         if (baseAsset === quoteAsset) {
-            return new BigNumber(1.0);
+            return memoize(new BigNumber(1.0));
         }
 
         const selectQuery = 'SELECT * FROM Prices WHERE UtcTimestamp = $utcTimestampNormalized AND BaseAsset = $baseAsset AND QuoteAsset = $quoteAsset LIMIT 1';
         const row = await this.db.get(selectQuery, { $utcTimestampNormalized: utcTimestampNormalized, $baseAsset: baseAsset, $quoteAsset: quoteAsset });
         if (row) {
-            return new BigNumber(row.Price) || undefined;
+            return memoize(new BigNumber(row.Price) || undefined);
         }
 
         let price = null; // a null result implies that the price is currently not known
@@ -65,23 +76,19 @@ class PriceCache {
         if (directCandle) {
             price = (new BigNumber(directCandle.High)).plus(directCandle.Low).dividedBy(2.0);
         } else if (directCandle === undefined) { // candle for this asset pair will never exist
-            if (avoidIndirectCalculation) {
-                return undefined;
-            } else {
-                price = await this.getPrice(utcTimestamp, quoteAsset, baseAsset, statusCallback, /*avoidIndirectCalculation*/ true);
-                if (price === undefined) { // candle for inverted asset pair will never exist
-                    const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback);
-                    const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback);
-                    if ((baseAssetBtcPrice === undefined) || (quoteAssetBtcPrice === undefined)) {
-                        price = undefined; // price will never be known
-                    } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
-                        price = null; // come back later
-                    } else {
-                        price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
-                    }
-                } else if (price !== null) {
-                    price = new BigNumber(1.0).dividedBy(price);
+            price = await this.getPrice(utcTimestamp, quoteAsset, baseAsset, statusCallback, memoization);
+            if (price === undefined) { // candle for inverted asset pair will never exist
+                const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback, memoization);
+                const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback, memoization);
+                if ((baseAssetBtcPrice === undefined) || (quoteAssetBtcPrice === undefined)) {
+                    price = undefined; // price will never be known
+                } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
+                    price = null; // come back later
+                } else {
+                    price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
                 }
+            } else if (price !== null) {
+                price = new BigNumber(1.0).dividedBy(price);
             }
         }
 
@@ -95,7 +102,7 @@ class PriceCache {
             });
         }
 
-        return price;
+        return memoize(price);
     }
 
     async getNearestCandle(symbol, interval, utcTimestamp, statusCallback, useCacheOnly) {

@@ -84,7 +84,11 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
         enumerationState.lots[asset] = [];
     }
 
-    const priceOfCostBasisAsset = await enumerationState.aggregator.priceCache.getPrice(utcTimestamp, costBasisAsset, enumerationState.aggregator.unitOfAccount, statusCallback('addLot'));
+    const priceOfCostBasisAsset = await enumerationState.aggregator.priceCache.getPrice(
+        utcTimestamp,
+        costBasisAsset,
+        enumerationState.aggregator.unitOfAccount,
+        statusCallback('addLot(' + sourceDescription + ')'));
 
     const lots = enumerationState.lots[asset];
     lots.push({

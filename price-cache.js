@@ -42,7 +42,7 @@ class PriceCache {
     static get INTERVAL_1_MONTH() { return '1M'; }
 
     async getPrice(utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization) {
-        console.debug('getPrice', utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization);
+        // console.debug('getPrice', utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization);
 
         memoization = memoization || {};
         memoization[baseAsset + quoteAsset] = { memoized: false, value: null };
@@ -109,7 +109,7 @@ class PriceCache {
     }
 
     async getNearestCandle(symbol, interval, utcTimestamp, statusCallback, useCacheOnly) {
-        console.debug('getNearestCandle', symbol, interval, utcTimestamp, statusCallback, useCacheOnly);
+        // console.debug('getNearestCandle', symbol, interval, utcTimestamp, statusCallback, useCacheOnly);
         symbol = normalizeAssetCase(symbol);
         const selectQuery = 'SELECT * FROM Candles WHERE UtcTimestamp = $utcTimestamp AND Symbol = $symbol AND Interval = $interval LIMIT 1';
         const row = await this.db.get(selectQuery, { $utcTimestamp: utcTimestamp, $symbol: symbol, $interval: interval });

@@ -16,6 +16,8 @@ const isBeforeStartDate = function(utcTimestamp, startMonth, startYear) {
 };
 
 const appendPortfolioValuationAndEmit = async(enumerationState, event, startMonth, startYear) => {
+    enumerationState.lastEventTimestamp = event.utcTimestamp;
+
     if (isBeforeStartDate(event.utcTimestamp, startMonth, startYear)) {
         return;
     }
@@ -46,8 +48,6 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event, startMont
     }
 
     await enumerationState.callback(event);
-
-    enumerationState.lastEventTimestamp = event.utcTimestamp;
 };
 
 const emitSnapshotsUpUntil = async(enumerationState, utcTimestamp, startMonth, startYear) => {

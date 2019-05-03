@@ -9,10 +9,14 @@ class Event {
     }
 }
 
+const isBeforeStartDate = function(utcTimestamp, startMonth, startYear) {
+    const date = new Date(utcTimestamp);
+    return ((date.getFullYear() < startYear) ||
+        ((date.getFullYear() == startYear) && ((date.getMonth() + 1) < startMonth)));
+};
+
 const appendPortfolioValuationAndEmit = async(enumerationState, event, startMonth, startYear) => {
-    const eventDate = new Date(event.utcTimestamp);
-    if ((eventDate.getFullYear() < startYear) ||
-        ((eventDate.getFullYear() == startYear) && ((eventDate.getMonth() + 1) < startMonth))) {
+    if (isBeforeStartDate(event.utcTimestamp, startMonth, startYear)) {
         return;
     }
 
@@ -152,6 +156,10 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
 
     }
 
+    if (isBeforeStartDate(record.UtcTimestamp, startMonth, startYear)) {
+        return;
+    }
+
     const commissionAssetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.CommissionAsset,
@@ -193,6 +201,10 @@ const handleDeposit = async(enumerationState, record, startMonth, startYear) => 
 
     await addLot(enumerationState, record.Asset, record.Amount, record.Asset, record.Amount, 'deposited', record.UtcTimestamp);
 
+    if (isBeforeStartDate(record.UtcTimestamp, startMonth, startYear)) {
+        return;
+    }
+
     const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.Asset,
@@ -214,16 +226,21 @@ const handleWithdrawal = async(enumerationState, record, startMonth, startYear) 
 
     adjustBalance(enumerationState, record.Asset, new BigNumber(-1).multipliedBy(record.Amount));
 
+    const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_WITHDRAWAL);
+    event.asset = record.Asset;
+    event.amount = new BigNumber(record.Amount);
+    event.lots = matchLots(enumerationState, record.Asset, record.Amount);
+
+    if (isBeforeStartDate(record.UtcTimestamp, startMonth, startYear)) {
+        return;
+    }
+
     const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.Asset,
         enumerationState.aggregator.unitOfAccount);
-
-    const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_WITHDRAWAL);
-    event.asset = record.Asset;
-    event.amount = new BigNumber(record.Amount);
     event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
-    event.lots = matchLots(enumerationState, record.Asset, record.Amount);
+
     await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 };
 
@@ -237,31 +254,35 @@ const handleBalanceCheckpoint = async(enumerationState, record, startMonth, star
 
         adjustBalance(enumerationState, record.Asset, adjustment);
 
-        const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
-            record.UtcTimestamp,
-            record.Asset,
-            enumerationState.aggregator.unitOfAccount);
-
+        let event;
         if (adjustment.isGreaterThan(0.0)) {
 
             await addLot(enumerationState, record.Asset, adjustment, record.Asset, 0, 'credited by Binance', record.UtcTimestamp);
 
-            const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_CREDIT);
-            event.asset = record.Asset;
+            event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_CREDIT);
             event.amount = adjustment;
-            event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
-            await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 
         } else {
 
-            const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_DEBIT);
-            event.asset = record.Asset;
+            event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_BINANCE_DEBIT);
             event.amount = adjustment.multipliedBy(-1);
-            event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
             event.lots = matchLots(enumerationState, record.Asset, adjustment.multipliedBy(-1));
-            await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
 
         }
+
+        if (isBeforeStartDate(record.UtcTimestamp, startMonth, startYear)) {
+            return;
+        }
+
+        event.asset = record.Asset;
+
+        const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
+            record.UtcTimestamp,
+            record.Asset,
+            enumerationState.aggregator.unitOfAccount);
+        event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
+
+        await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
     }
 };
 

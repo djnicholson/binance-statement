@@ -84,6 +84,7 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
         enumerationState.lots[asset] = [];
     }
 
+    console.debug('Looking up historical (%s) price of %s so that cost-price of %f %s can be recorded', new Date(utcTimestamp), costBasisAsset, quantity, asset);
     const priceOfCostBasisAsset = await enumerationState.aggregator.priceCache.getPrice(
         utcTimestamp,
         costBasisAsset,

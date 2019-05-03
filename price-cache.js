@@ -116,14 +116,17 @@ class PriceCache {
             const candles = await this.binance.candles({ symbol: symbol, interval: interval, endTime: utcTimestamp, limit: 1 });
             if (candles.length == 0) {
                 candle = undefined; // this timestamp is probably before the creation date of this market
+                statusCallback && statusCallback(interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + ' does not exist');
             } else if (candles[0].closeTime < (new Date).getTime()) {
                 candle = candles[0];
                 statusCallback && statusCallback('Retrieved ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + '...');
             } else {
                 candle = null; // candle is still partial; come back later
+                statusCallback && statusCallback(interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + ' is partial and won\'t be used');
             }
         } catch (e) {
             candle = undefined; // an undefined result implies that the candle will never exist
+            statusCallback && statusCallback('Error retrieving ' + interval + ' candle for ' + symbol + ' enclosing time ' + utcTimestamp + ': ' + e);
             if ((e + '').toLowerCase().indexOf('invalid symbol') == -1) {
                 throw e;
             }

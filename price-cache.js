@@ -50,7 +50,7 @@ class PriceCache {
             return value;
         };
 
-        if (memoization[baseAsset + quoteAsset].memoized) {
+        if (memoization[baseAsset + quoteAsset] && memoization[baseAsset + quoteAsset].memoized) {
             return memoization[baseAsset + quoteAsset].value;
         }
 

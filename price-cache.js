@@ -45,6 +45,7 @@ class PriceCache {
         console.debug('getPrice', utcTimestamp, baseAsset, quoteAsset, statusCallback, memoization);
 
         memoization = memoization || {};
+        memoization[baseAsset + quoteAsset] = { memoized: false, value: null };
         const memoize = value => {
             memoization[baseAsset + quoteAsset] = { memoized: true, value: value };
             return value;
@@ -76,16 +77,18 @@ class PriceCache {
         if (directCandle) {
             price = (new BigNumber(directCandle.High)).plus(directCandle.Low).dividedBy(2.0);
         } else if (directCandle === undefined) { // candle for this asset pair will never exist
-            price = await this.getPrice(utcTimestamp, quoteAsset, baseAsset, statusCallback, memoization);
+            price = memoization[quoteAsset + baseAsset] ? undefined : await this.getPrice(utcTimestamp, quoteAsset, baseAsset, statusCallback, memoization);
             if (price === undefined) { // candle for inverted asset pair will never exist
-                const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback, memoization);
-                const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback, memoization);
-                if ((baseAssetBtcPrice === undefined) || (quoteAssetBtcPrice === undefined)) {
-                    price = undefined; // price will never be known
-                } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
-                    price = null; // come back later
-                } else {
-                    price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
+                if (!memoization[baseAsset + 'BTC'] && !memoization[quoteAsset + 'BTC']) {
+                    const baseAssetBtcPrice = await this.getPrice(utcTimestamp, baseAsset, 'BTC', statusCallback, memoization);
+                    const quoteAssetBtcPrice = await this.getPrice(utcTimestamp, quoteAsset, 'BTC', statusCallback, memoization);
+                    if ((baseAssetBtcPrice === undefined) || (quoteAssetBtcPrice === undefined)) {
+                        price = undefined; // price will never be known
+                    } else if ((baseAssetBtcPrice === null) || (quoteAssetBtcPrice === null)) {
+                        price = null; // come back later
+                    } else {
+                        price = baseAssetBtcPrice.dividedBy(quoteAssetBtcPrice);
+                    }
                 }
             } else if (price !== null) {
                 price = new BigNumber(1.0).dividedBy(price);

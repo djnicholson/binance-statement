@@ -269,6 +269,8 @@ const handleBalanceCheckpoint = async(enumerationState, record, startMonth, star
 
         adjustBalance(enumerationState, record.Asset, adjustment);
 
+        console.debug('%s adjustment on %s, expected: %f, actual: %f', record.Asset, new Date(record.UtcTimestamp), expectedBalance, actualBalance);
+
         let event;
         if (adjustment.isGreaterThan(0.0)) {
 

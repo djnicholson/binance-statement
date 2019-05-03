@@ -9,7 +9,13 @@ class Event {
     }
 }
 
-const isBeforeStartDate = function(utcTimestamp, startMonth, startYear) {
+const statusCallback = (callSite) => {
+    return message => {
+        console.debug('%s: %s', callSite, message)
+    };
+};
+
+const isBeforeStartDate = (utcTimestamp, startMonth, startYear) => {
     const date = new Date(utcTimestamp);
     return ((date.getFullYear() < startYear) ||
         ((date.getFullYear() == startYear) && ((date.getMonth() + 1) < startMonth)));
@@ -30,7 +36,8 @@ const appendPortfolioValuationAndEmit = async(enumerationState, event, startMont
             const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
                 event.utcTimestamp,
                 asset,
-                enumerationState.aggregator.unitOfAccount);
+                enumerationState.aggregator.unitOfAccount,
+                statusCallback('appendPortfolioValuationAndEmit'));
 
             if (assetPrice === null) {
                 event.valuationComposition[asset] = null;
@@ -77,7 +84,7 @@ const addLot = async(enumerationState, asset, quantity, costBasisAsset, costBasi
         enumerationState.lots[asset] = [];
     }
 
-    const priceOfCostBasisAsset = await enumerationState.aggregator.priceCache.getPrice(utcTimestamp, costBasisAsset, enumerationState.aggregator.unitOfAccount);
+    const priceOfCostBasisAsset = await enumerationState.aggregator.priceCache.getPrice(utcTimestamp, costBasisAsset, enumerationState.aggregator.unitOfAccount, statusCallback('addLot'));
 
     const lots = enumerationState.lots[asset];
     lots.push({
@@ -163,12 +170,14 @@ const handleFill = async(enumerationState, record, startMonth, startYear) => {
     const commissionAssetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.CommissionAsset,
-        enumerationState.aggregator.unitOfAccount);
+        enumerationState.aggregator.unitOfAccount,
+        statusCallback('handleFill/commissionAssetPrice'));
 
     const baseAssetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.BaseAsset,
-        enumerationState.aggregator.unitOfAccount);
+        enumerationState.aggregator.unitOfAccount,
+        statusCallback('handleFill/baseAssetPrice'));
 
     const commissionValue = commissionAssetPrice ? commissionAssetPrice.multipliedBy(record.Commission) : null;
 
@@ -208,7 +217,8 @@ const handleDeposit = async(enumerationState, record, startMonth, startYear) => 
     const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.Asset,
-        enumerationState.aggregator.unitOfAccount);
+        enumerationState.aggregator.unitOfAccount,
+        statusCallback('handleDeposit'));
 
     const event = new Event(record.UtcTimestamp, Aggregator.EVENT_TYPE_DEPOSIT);
     event.asset = record.Asset;
@@ -238,7 +248,8 @@ const handleWithdrawal = async(enumerationState, record, startMonth, startYear) 
     const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
         record.UtcTimestamp,
         record.Asset,
-        enumerationState.aggregator.unitOfAccount);
+        enumerationState.aggregator.unitOfAccount,
+        statusCallback('handleWithdrawal'));
     event.value = assetPrice ? assetPrice.multipliedBy(record.Amount) : null;
 
     await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);
@@ -279,7 +290,8 @@ const handleBalanceCheckpoint = async(enumerationState, record, startMonth, star
         const assetPrice = await enumerationState.aggregator.priceCache.getPrice(
             record.UtcTimestamp,
             record.Asset,
-            enumerationState.aggregator.unitOfAccount);
+            enumerationState.aggregator.unitOfAccount,
+            statusCallback('handleBalanceCheckpoint'));
         event.value = assetPrice ? assetPrice.multipliedBy(event.amount) : null;
 
         await appendPortfolioValuationAndEmit(enumerationState, event, startMonth, startYear);

@@ -11,7 +11,7 @@ class Event {
 
 const statusCallback = (callSite) => {
     return message => {
-        console.debug('%s: %s', callSite, message)
+        // console.debug('%s: %s', callSite, message)
     };
 };
 

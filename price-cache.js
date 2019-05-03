@@ -47,21 +47,21 @@ class PriceCache {
         quoteAsset = normalizeAssetCase(quoteAsset);
 
         // use the midpoint of the containing minute for result caching purposes:
-        utcTimestamp = (Math.round(utcTimestamp / (1000 * 60)) * (1000 * 60) + (30 * 1000));
+        const utcTimestampNormalized = (Math.round(utcTimestamp / (1000 * 60)) * (1000 * 60) + (30 * 1000));
 
         if (baseAsset === quoteAsset) {
             return new BigNumber(1.0);
         }
 
-        const selectQuery = 'SELECT * FROM Prices WHERE UtcTimestamp = $utcTimestamp AND BaseAsset = $baseAsset AND QuoteAsset = $quoteAsset LIMIT 1';
-        const row = await this.db.get(selectQuery, { $utcTimestamp: utcTimestamp, $baseAsset: baseAsset, $quoteAsset: quoteAsset });
+        const selectQuery = 'SELECT * FROM Prices WHERE UtcTimestamp = $utcTimestampNormalized AND BaseAsset = $baseAsset AND QuoteAsset = $quoteAsset LIMIT 1';
+        const row = await this.db.get(selectQuery, { $utcTimestampNormalized: utcTimestampNormalized, $baseAsset: baseAsset, $quoteAsset: quoteAsset });
         if (row) {
             return new BigNumber(row.Price) || undefined;
         }
 
         let price = null; // a null result implies that the price is currently not known
 
-        const directCandle = await this.getNearestCandle(baseAsset + quoteAsset, PriceCache.INTERVAL_1_MINUTE, utcTimestamp, statusCallback);
+        const directCandle = await this.getNearestCandle(baseAsset + quoteAsset, PriceCache.INTERVAL_1_MINUTE, utcTimestampNormalized, statusCallback);
         if (directCandle) {
             price = (new BigNumber(directCandle.High)).plus(directCandle.Low).dividedBy(2.0);
         } else if (directCandle === undefined) { // candle for this asset pair will never exist
@@ -86,9 +86,9 @@ class PriceCache {
         }
 
         if (price !== null) {
-            const insertQuery = 'INSERT INTO Prices VALUES ($utcTimestamp, $baseAsset, $quoteAsset, $price)';
+            const insertQuery = 'INSERT INTO Prices VALUES ($utcTimestampNormalized, $baseAsset, $quoteAsset, $price)';
             await this.db.run(insertQuery, {
-                $utcTimestamp: utcTimestamp,
+                $utcTimestampNormalized: utcTimestampNormalized,
                 $baseAsset: baseAsset,
                 $quoteAsset: quoteAsset,
                 $price: price ? price.toString() : null,
